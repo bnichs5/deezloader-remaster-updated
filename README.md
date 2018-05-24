@@ -16,7 +16,7 @@ Telegram Channel - https://t.me/joinchat/AAAAAFCRjRpUr-IF96RV3g
 - Simple and user friendly
 
 # Remaster features
-- Soundiiz integration to convert playlists
+- Software integration to convert playlists
 - Download your own playlists directly
 
 # Donations
