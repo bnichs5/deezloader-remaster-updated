@@ -105,6 +105,52 @@ socket.on('getUserSettings', function (data) {
 	console.log('Settings refreshed');
 });
 
+// CONFIGURE MOOVAL
+var converterURL = 'https://www.mooval.de/'
+
+var webview = document.querySelector('#playlists_converter_webview')
+
+const webviewReady = new Promise((resolve, reject) => {
+	webview.addEventListener("dom-ready", function() {
+		resolve(webview);
+	});
+});
+
+const loadDefaults = `
+	document.querySelector('#music-id-from-selector').setAttribute('data-service-id', 'CONVERTFROM');
+	document.querySelector('#music-id-to-selector').setAttribute('data-service-id', 'DEEZER');
+	document.querySelector('#musicServiceIdFrom').setAttribute('value', 'SPOTIFY');
+	document.querySelector('#musicServiceIdTo').setAttribute('value', 'DEEZER');
+`
+
+const skipContinue = `
+	document.querySelector('#continue-authentication').click();
+`
+
+const updateOptions = `
+	document.querySelector('#appendSuffixToPlaylistNames').click();
+	document.querySelector('#toggleAllAlbums').click();
+	document.querySelector('#toggleAllTracks').click();
+	document.querySelector('#overwriteExisting').click();
+`
+
+webview.addEventListener("dom-ready", function() {
+	var browser = webview.getWebContents()
+	if (webview.getURL() == converterURL) {
+		console.log('Loading converter defaults');
+		const defaults = loadDefaults.replace('CONVERTFROM', userSettings.convertFrom)
+		browser.webContents.executeJavaScript(defaults, true);
+	}
+	if (webview.getURL() == `${converterURL}userInfo`) {
+		console.log('Auto skiping converter continue')
+		browser.webContents.executeJavaScript(skipContinue, true);
+	}
+	if (webview.getURL() == `${converterURL}transfer/showChanges`) {
+		console.log('Deselecting converter unnecessary options')
+		browser.webContents.executeJavaScript(updateOptions, true);
+	}
+});
+
 /**
  *	Modal Area START
  */
@@ -112,7 +158,6 @@ socket.on('getUserSettings', function (data) {
 // Prevent default behavior of closing button
 $('.modal-close').click(function (e) {
 	e.preventDefault();
-
 });
 
 // Settings Modal START
@@ -129,6 +174,7 @@ $('#modal_settings_btn_saveSettings').click(function () {
 
 	// Save
 	settings.userDefined = {
+		convertFrom: $('#convert_from').val(),
 		trackNameTemplate: $('#modal_settings_input_trackNameTemplate').val(),
 		playlistTrackNameTemplate: $('#modal_settings_input_playlistTrackNameTemplate').val(),
 		albumNameTemplate: $('#modal_settings_input_albumNameTemplate').val(),
@@ -146,6 +192,8 @@ $('#modal_settings_btn_saveSettings').click(function () {
 	// Send updated settings to be saved into config file
 	socket.emit('saveSettings', settings);
 	socket.emit("getUserSettings");
+	var webview = document.querySelector('#playlists_converter_webview')
+	webview.loadURL('https://www.mooval.de/')
 });
 
 // Reset defaults button
@@ -178,6 +226,8 @@ $('#modal_settings_btn_logout').click(function () {
 
 // Populate settings fields
 function fillSettingsModal(settings) {
+	$('#convert_from').val(settings.convertFrom);
+	$('#convert_from').material_select();
 	$('#modal_settings_input_trackNameTemplate').val(settings.trackNameTemplate);
 	$('#modal_settings_input_playlistTrackNameTemplate').val(settings.playlistTrackNameTemplate);
 	$('#modal_settings_input_albumNameTemplate').val(settings.albumNameTemplate);

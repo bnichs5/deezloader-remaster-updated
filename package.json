@@ -1,8 +1,8 @@
 {
 	"license": "CC-BY-NC-SA-4.0",
 	"devDependencies": {
-		"electron": "latest",
-		"electron-builder": "latest"
+		"electron": "^2.0.2",
+		"electron-builder": "^20.15.1"
 	},
 	"scripts": {
 		"start": "electron ./app",

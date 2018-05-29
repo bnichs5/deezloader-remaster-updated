@@ -1,6 +1,7 @@
 {
 	"serverPort": 1730,
 	"userDefined": {
+		"convertFrom": "SPOTIFY",
 		"trackNameTemplate": "%artist% - %title%",
 		"playlistTrackNameTemplate": "%number% - %artist% - %title%",
 		"albumNameTemplate": "%artist% - %album%",

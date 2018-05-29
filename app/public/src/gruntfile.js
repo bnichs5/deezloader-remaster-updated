@@ -9,10 +9,10 @@ var FoldersConfig = {
 };
 
 var FilesConfig = {
-	css: 'materialize',
+	css: 'main',
 	js: 'core'
 };
- 
+
 module.exports = function (grunt) {
 
 	require('jit-grunt')(grunt);

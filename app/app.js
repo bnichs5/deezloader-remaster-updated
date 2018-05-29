@@ -60,6 +60,7 @@ const autologinLocation = userdata+"autologin";
 const coverArtFolder = os.tmpdir() + path.sep + 'deezloader-imgs' + path.sep;
 const defaultDownloadDir = homedata + path.sep + "Music" + path.sep + 'Deezloader' + path.sep;
 const defaultSettings = {
+	"convertFrom": "",
 	"trackNameTemplate": "%artist% - %title%",
 	"playlistTrackNameTemplate": "%number% - %artist% - %title%",
 	"albumNameTemplate": "%artist% - %album%",
