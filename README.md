@@ -1,4 +1,4 @@
-# DeezLoader Remaster V4.1.0 final
+# DeezLoader Remaster V4.1.1 final
 DeezLoader Remaster is here to replace the old DeezLoader V2.3.1. and DeezLoader Reborn<br/>
 With this software you can download high-qualiy music and enjoy.
 
@@ -21,9 +21,8 @@ Telegram Channel - https://t.me/joinchat/AAAAAFCRjRpUr-IF96RV3g
 
 # Donations
 - **BTC:** 3DVsShXt4GpPax6hSqatTFRJxM2VQ7jnpa
-- **BTH:** 1KqvH7E2e1amABmLVt1bM9q11TmaMeioed
 - **ETH:** 0x2140A5126aa2F85A4a98862E573A6214EA49325B
-- **Paypal:** ivandelabeldad@gmail.com
+- **Paypal:** [Donate](https://paypal.me/ivandelabeldad)
 
 # How to run
 - Download the installer and run it.
