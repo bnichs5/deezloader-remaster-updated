@@ -22,6 +22,7 @@ td>img {
 #tab_playlists_converter {
   display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
 }
 
 #tab_playlists_converter webview {
