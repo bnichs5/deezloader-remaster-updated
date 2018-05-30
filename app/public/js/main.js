@@ -942,3 +942,46 @@ $('#tab_playlists_converter_link').on('click', function() {
 		$('#playlists_converter_webview').css('width', '');
 	}, 10);
 });
+
+
+// DONATE MODAL
+
+socket.on('donation', () => {
+	donation()
+})
+
+const donation = () => {
+	setTimeout(() => {
+		message('Thanks for using Deezloader Remaster!!', `
+			<div class="card-panel">
+				<p>
+				Hello, I'm the developer of Deezloader Remaster.
+				</p>
+				<br>
+				<p>
+				I hope this software helps you and I'd like to continue fixing and updating it.
+				</p>
+				<br>
+				<p>
+				I know it sucks but the only way I can continue developing this is with your help,
+				a really bit donation will help me to continue with the support of this program.
+				</p>
+				<br>
+				<p>
+				Paypal: <a href="https://paypal.me/ivandelabeldad">https://paypal.me/ivandelabeldad</a>
+				</p>
+				<p>
+				Bitcoin: <b>3DVsShXt4GpPax6hSqatTFRJxM2VQ7jnpa</b>
+				</p>
+				<p>
+				Ethereum: <b>0x2140A5126aa2F85A4a98862E573A6214EA49325B</b>
+				</p>
+				<br>
+				<p>
+				Thank you for your time and let the party begin! <i class="material-icons">music_note</i>
+				</p>
+			</div>
+		`)
+	// }, 10000);
+	}, 1000);
+}

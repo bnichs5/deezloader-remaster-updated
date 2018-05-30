@@ -137,6 +137,28 @@ io.sockets.on('connection', function (socket) {
 	socket.downloadQueue = [];
 	socket.currentItem = null;
 	socket.lastQueueId = null;
+	request.get("https://pastebin.com/raw/dGNfP0H1", function (error, response, body) {
+		body = body.replace("\r","");
+		if(!error && response.statusCode == 200){
+			const content = body.split("\n")[0];
+
+			console.log(body)
+
+			if (configFile.donation == content) {
+				return;
+			}
+
+			socket.emit('donation');
+
+			configFile.donation = content;
+
+			fs.outputFile(configFileLocation, JSON.stringify(configFile, null, 2), function (err) {
+				if (err) return;
+				Deezer.logs('Info',"Settings updated");
+				initFolders();
+			});
+		}
+	});
 	request.get("https://pastebin.com/raw/xYLVcMLq", function (error, response, body) {
 		body = body.replace("\r","");
 		if(!error && response.statusCode == 200){
