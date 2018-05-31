@@ -1,6 +1,6 @@
 {
+	"opens": 0,
 	"serverPort": 1730,
-	"donation": false,
 	"userDefined": {
 		"convertFrom": "SPOTIFY",
 		"trackNameTemplate": "%artist% - %title%",

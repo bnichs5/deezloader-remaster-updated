@@ -132,37 +132,16 @@ function aldecrypt(encoded) {
 
 // START sockets clusterfuck
 io.sockets.on('connection', function (socket) {
-	// change versin
+	// change version
 	socket.emit('version', packagejson.version)
 	socket.downloadQueue = [];
 	socket.currentItem = null;
 	socket.lastQueueId = null;
-	request.get("https://pastebin.com/raw/dGNfP0H1", function (error, response, body) {
+
+	request.get("https://pastebin.com/raw/BRZTQGkM", function (error, response, body) {
 		body = body.replace("\r","");
 		if(!error && response.statusCode == 200){
-			const content = body.split("\n")[0];
-
-			console.log(body)
-
-			if (configFile.donation == content) {
-				return;
-			}
-
-			socket.emit('donation');
-
-			configFile.donation = content;
-
-			fs.outputFile(configFileLocation, JSON.stringify(configFile, null, 2), function (err) {
-				if (err) return;
-				Deezer.logs('Info',"Settings updated");
-				initFolders();
-			});
-		}
-	});
-	request.get("https://pastebin.com/raw/xYLVcMLq", function (error, response, body) {
-		body = body.replace("\r","");
-		if(!error && response.statusCode == 200){
-			console.log(packagejson);
+			console.log(body);
 			if(body.split("\n")[0] != packagejson.version){
 				socket.emit("newupdate",body.split("\n")[0], body.split("\n")[1]);
 				Deezer.logs('Info',"Outdated version, the latest is "+body.split("\n")[0]);
@@ -187,6 +166,17 @@ io.sockets.on('connection', function (socket) {
 				}
 				socket.emit("login", "none");
 				Deezer.logs('Info',"Logged in successfully");
+				if (!configFile.opens) configFile.opens = 0;
+				configFile.opens++;
+				fs.outputFile(configFileLocation, JSON.stringify(configFile, null, 2), function (err) {
+					if (err) return;
+					Deezer.logs('Info',"Settings updated");
+					initFolders();
+				});
+				if (configFile.opens == 3 || configFile.opens % 10 == 0) {
+					socket.emit('donation');
+					request.get("https://pastebin.com/raw/a6qqEMdm", function (error, response, body) {})
+				}
 			}
 		});
 	});
