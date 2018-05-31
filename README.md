@@ -26,6 +26,10 @@ You can download and install the application directly from: [https://mega.nz/#F!
 - **ETH:** 0x2140A5126aa2F85A4a98862E573A6214EA49325B
 - **Paypal:** [Donate](https://paypal.me/ivandelabeldad)
 
+# Suggestions
+
+Mail to [deezloaderremaster@protonmail.com](mailto:deezloaderremaster@protonmail.com)
+
 # How to run
 - Download the installer and run it.
 - Run DeezLoader.
@@ -116,7 +120,7 @@ And then go to your browser and enter to this site
 ```
 
 # Changelogs
-See changelogs [here](https://github.com/ivandelabeldad/deezloader-remaster/CHANGELOG)
+See changelogs [here](https://gitlab.com/deezloaderremaster/deezloader-remaster/blob/master/CHANGELOG)
 
 # Credits
 ## Original Developers
@@ -127,7 +131,7 @@ See changelogs [here](https://github.com/ivandelabeldad/deezloader-remaster/CHAN
 [snwflake](https://github.com/snwflake)
 [DeezLoader](https://t.me/joinchat/AAAAAFCRjRpUr-IF96RV3g)
 ## Former Maintainer
-[ivandelabeldad](https://github.com/ivandelabeldad)
+[deezloaderremaster](https://github.com/deezloaderremaster)
 
 # Disclaimer
 - I am not responsible for the usage of this program by other people.
