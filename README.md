@@ -28,7 +28,10 @@ You can download and install the application directly from: [https://mega.nz/#F!
 
 # Suggestions
 
-Mail to [deezloaderremaster@protonmail.com](mailto:deezloaderremaster@protonmail.com)
+If you have suggestions or want to be a new feature added to deezloader-remaster
+you can:
+- Open an issue in [https://gitlab.com/deezloaderremaster/deezloader-remaster/issues](https://gitlab.com/deezloaderremaster/deezloader-remaster/issues)
+- Send a mail to [deezloaderremaster@protonmail.com](mailto:deezloaderremaster@protonmail.com)
 
 # How to run
 - Download the installer and run it.
