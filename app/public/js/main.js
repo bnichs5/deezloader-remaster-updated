@@ -118,7 +118,7 @@ const webviewReady = new Promise((resolve, reject) => {
 
 const loadDefaults = `
 	document.querySelector('#music-id-from-selector').setAttribute('data-service-id', 'CONVERTFROM');
-	document.querySelector('#music-id-to-selector').setAttribute('data-service-id', 'DEEZER');
+	document.querySelector('#music-id-to-selector').setAttribute('data-service-id', 'CONVERTTO');
 	document.querySelector('#musicServiceIdFrom').setAttribute('value', 'SPOTIFY');
 	document.querySelector('#musicServiceIdTo').setAttribute('value', 'DEEZER');
 `
@@ -138,7 +138,9 @@ webview.addEventListener("dom-ready", function() {
 	var browser = webview.getWebContents()
 	if (webview.getURL() == converterURL) {
 		console.log('Loading converter defaults');
-		const defaults = loadDefaults.replace('CONVERTFROM', userSettings.convertFrom)
+		let defaults = loadDefaults;
+		defaults = defaults.replace('CONVERTFROM', userSettings.convertFrom);
+		defaults = defaults.replace('CONVERTTO', userSettings.convertTo);
 		browser.webContents.executeJavaScript(defaults, true);
 	}
 	if (webview.getURL() == `${converterURL}userInfo`) {
@@ -174,6 +176,7 @@ $('#modal_settings_btn_saveSettings').click(function () {
 
 	// Save
 	settings.userDefined = {
+		convertTo: $('#convert_to').val(),
 		convertFrom: $('#convert_from').val(),
 		trackNameTemplate: $('#modal_settings_input_trackNameTemplate').val(),
 		playlistTrackNameTemplate: $('#modal_settings_input_playlistTrackNameTemplate').val(),
@@ -227,6 +230,7 @@ $('#modal_settings_btn_logout').click(function () {
 // Populate settings fields
 function fillSettingsModal(settings) {
 	$('#convert_from').val(settings.convertFrom);
+	$('#convert_to').val(settings.convertTo);
 	$('#convert_from').material_select();
 	$('#modal_settings_input_trackNameTemplate').val(settings.trackNameTemplate);
 	$('#modal_settings_input_playlistTrackNameTemplate').val(settings.playlistTrackNameTemplate);

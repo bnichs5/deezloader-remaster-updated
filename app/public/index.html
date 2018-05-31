@@ -74,14 +74,25 @@
 		</div>
 
 		<div class="row">
-			<div class="input-field col s12">
+			<div class="input-field col s6">
 				<i class="material-icons prefix">label</i>
 				<select name="convert_from" id="convert_from">
-					<option value="SPOTIFY">SPOTIFY -> DEEZER</option>
-					<option value="GROOVE_MUSIC">GROOVE -> DEEZER</option>
-					<option value="NAPSTER">NAPSTER -> DEEZER</option>
+					<option value="SPOTIFY">SPOTIFY</option>
+					<option value="GROOVE_MUSIC">GROOVE</option>
+					<option value="NAPSTER">NAPSTER</option>
+					<option value="DEEZER">DEEZER</option>
 				</select>
-				<label for="convert_from">Playlist Converter <i class="material-icons valignicon tiny tooltipped" data-position="right" data-delay="50" data-tooltip="Change the origin service to convert playlists">info_outline</i></label>
+				<label for="convert_from">Playlist Converter (FROM)<i class="material-icons valignicon tiny tooltipped" data-position="right" data-delay="50" data-tooltip="Change the default ORIGIN service to convert playlists">info_outline</i></label>
+			</div>
+			<div class="col s1"></div>
+			<div class="input-field col s5">
+				<select name="convert_to" id="convert_to">
+					<option value="DEEZER">DEEZER</option>
+					<option value="GROOVE_MUSIC">GROOVE</option>
+					<option value="NAPSTER">NAPSTER</option>
+					<option value="SPOTIFY">SPOTIFY</option>
+				</select>
+				<label for="convert_from">Playlist Converter (TO)<i class="material-icons valignicon tiny tooltipped" data-position="right" data-delay="50" data-tooltip="Change the default DESTINATION service to convert playlists">info_outline</i></label>
 			</div>
 		</div>
 

@@ -2,6 +2,7 @@
 	"opens": 0,
 	"serverPort": 1730,
 	"userDefined": {
+		"convertTo": "DEEZER",
 		"convertFrom": "SPOTIFY",
 		"trackNameTemplate": "%artist% - %title%",
 		"playlistTrackNameTemplate": "%number% - %artist% - %title%",
