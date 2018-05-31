@@ -20,10 +20,14 @@
 		},
 		"linux": {
 			"target": "AppImage",
-			"icon": "app/icon.png"
+			"icon": "res/icon.png",
+			"asar": true
 		},
 		"mac": {
 			"icon": "res/icon.icns"
+		},
+		"directories": {
+			"output": "dist"
 		},
 		"nsis": {
 			"oneClick": false,
