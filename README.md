@@ -2,9 +2,7 @@
 DeezLoader Remaster is here to replace the old DeezLoader V2.3.1. and DeezLoader Reborn<br/>
 With this software you can download high-qualiy music and enjoy.
 
-Source code - https://github.com/Deezloader/DeezLoader-Reborn<br/>
-
-Telegram Channel - https://t.me/joinchat/AAAAAFCRjRpUr-IF96RV3g
+Source code - https://gitlab.com/deezloaderremaster/deezloader-remaster<br/>
 
 # Features
 - Download FLAC/MP3-320 music content from Deezer(FLAC needs to be turned on in the settings 'turn on HIFI')
@@ -57,12 +55,17 @@ pkg install git nodejs
 ```
 If it asks you if you want to continue, enter `y`.
 
-### 3. Download
+### 3. Downloads
 
+#### Ready to install
+
+You can download binaries directly from: [https://mega.nz/#F!zeBiWS7a!_W2cCdzF2hT-m5ysOo_nJA](https://mega.nz/#F!zeBiWS7a!_W2cCdzF2hT-m5ysOo_nJA)
+
+#### Source code
 
 To download the release version:
 ```
-git clone  https://github.com/Deezloader/DeezLoader-Reborn
+git clone  https://gitlab.com/deezloaderremaster/deezloader-remaster
 ```
 Then navigate to the app folder using this command
 ```
