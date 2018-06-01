@@ -6,28 +6,109 @@ const path = require('path')
 const fs = require('fs-extra')
 
 const packageJson = require('../package.json')
-const defaultConfigLocation = path.join(__dirname, '..', 'default.json')
-const defaultConfig = fs.readJSONSync(defaultConfigLocation)
+const defaultConfigPath = path.join(__dirname, '..', 'default.json')
+const defaultConfig = fs.readJSONSync(defaultConfigPath)
 let userdata = ''
 let homedata = os.homedir()
-let logsLocation = ''
-let configFileLocation = ''
-let configFile = undefined
-let autologinLocation = ''
+let configFilePath = ''
+let configFile = {}
+let autoLoginPath = ''
 let defaultDownloadDir = ''
+let downloadDir = ''
 let coverArtFolder = ''
 
 const loadDefaultConfig = () => {
-  fs.outputJSONSync(configFileLocation, defaultConfig, {
+  fs.outputJSONSync(configFilePath, defaultConfig, {
     spaces: '  '
   })
 }
+let settings = {
+  save: () => {
+    fs.outputJSONSync(configFilePath, configFile, {
+      spaces: '  '
+    })
+    downloadDir = getDownloadDir()
+    logger.info('Settings saved.')
+  },
+  update: (newUserSettings) => {
+    let userSettings = newUserSettings
+    if (userSettings.downloadLocation == defaultDownloadDir) {
+      userSettings.downloadLocation = null;
+    } else {
+      userSettings.downloadLocation =
+        path.resolve(userSettings.downloadLocation + path.sep) + path.sep;
+      downloadDir = userSettings.downloadLocation;
+    }
+    configFile.userDefined = userSettings
+    downloadDir = getDownloadDir()
+    settings.save()
+    logger.info('Settings updated.')
+  },
+  incrementOpens: () => {
+    configFile.opens++
+    settings.save()
+  },
+  shouldOpen: () => {
+    if (configFile.opens === 3) {
+      return true
+    }
+    if (configFile.opens % 10 == 0) {
+      return true
+    }
+    return false
+  },
+  user: () => {
+    return configFile.userDefined
+  },
+  serverPort: () => {
+    return configFile.serverPort
+  },
+  opens: () => {
+    return configFile.opens
+  },
+}
 
-const saveConfig = () => {
-  fs.outputJSONSync(configFileLocation, configFile, {
-    spaces: '  '
-  })
-  logger.info('Settings updated.')
+const autoLogin = {
+  save: (data) => {
+    fs.outputFileSync(autoLoginPath, data)
+    logger.info('Autologin saved.')
+  },
+  load: () => {
+    if (!fs.existsSync(autoLoginPath)) {
+      logger.info('Autologin not found.')
+      return ''
+    }
+    let data = fs.readFileSync(autoLoginPath).toString('utf8')
+    logger.info('Loaded auto login.')
+    return data
+  },
+  delete: () => {
+    fs.unlink(autoLoginPath, function () {})
+  }
+}
+
+const coverArt = {
+  reset: () => {
+    fs.removeSync(coverArtFolder);
+    fs.ensureDirSync(coverArtFolder);
+  },
+  path: () => {
+    return coverArtFolder
+  }
+}
+
+const getDownloadDir = () => {
+  let dir = defaultDownloadDir
+  if (configFile.userDefined.downloadLocation != null) {
+    dir = configFile.userDefined.downloadLocation
+  }
+  if (!fs.existsSync(dir)) {
+    dir = defaultDownloadDir;
+    configFile.userDefined.downloadLocation = dir
+    fs.ensureDirSync(dir)
+    settings.save()
+  }
+  return dir
 }
 
 switch (process.platform) {
@@ -46,15 +127,15 @@ switch (process.platform) {
     break
 }
 
-configFileLocation = path.join(userdata, 'config.json')
-if (!fs.existsSync(configFileLocation)) {
+configFilePath = path.join(userdata, 'config.json')
+if (!fs.existsSync(configFilePath)) {
   loadDefaultConfig()
 }
-configFile = fs.readJSONSync(configFileLocation)
-autologinLocation = path.join(userdata, 'autologin')
+configFile = fs.readJSONSync(configFilePath)
+autoLoginPath = path.join(userdata, 'autologin')
 defaultDownloadDir = path.join(homedata, 'Music', 'Deezloader')
+downloadDir = getDownloadDir()
 coverArtFolder = path.join(os.tmpdir(), 'deezloader-imgs')
-logsLocation = path.join(userdata, 'logs.log')
 
 const configIsOk = () => {
   if (typeof configFile.userDefined.numplaylistbyalbum != "boolean") {
@@ -77,7 +158,7 @@ const configIsOk = () => {
       `Current value: ${configFile.userDefined.albumNameTemplate}`, {})
     return false
   }
-  if (!configFile.opens) {
+  if (typeof configFile.opens != "number") {
     logger.warn(`opens is not a number. Current value ${configFile.opens}`)
     return false
   }
@@ -87,15 +168,16 @@ const configIsOk = () => {
 if (!configIsOk()) {
   logger.info('Some configuration was wrong. Setting configuration to defaults.')
   loadDefaultConfig()
-  configFile = fs.readJSONSync(configFileLocation)
+  configFile = fs.readJSONSync(configFilePath)
 }
 
+coverArt.reset()
+
 module.exports = {
-  userdata,
-  logsLocation,
-  configFile,
-  autologinLocation,
-  coverArtFolder,
+  settings,
+  autoLogin,
+  coverArt,
   packageJson,
-  saveConfig,
+  downloadDir,
+  userdata,
 }

@@ -1,6 +1,10 @@
 // @ts-check
 
 const winston = require('winston')
+const path = require('path')
+const { userdata } = require('./config')
+// console.log(userdata)
+// const filePath  = path.join(userdata, 'logs.log')
 
 const logger = new winston.Logger({
   transports: [
