@@ -4,35 +4,8 @@ const crypto = require('crypto');
 const fs = require("fs-extra");
 const path = require('path');
 const https = require('https');
-const os = require('os');
-var userdata = "";
-var homedata = "";
-if(process.env.APPDATA){
-	userdata = process.env.APPDATA + path.sep + "Deezloader\\";
-	homedata = os.homedir();
-}else if(process.platform == "darwin"){
-	homedata = os.homedir();
-	userdata = homedata + '/Library/Application Support/Deezloader/';
-}else if(process.platform == "android"){
-	homedata = os.homedir() + "/storage/shared";
-	userdata = homedata + "/Deezloader/";
-}else{
-	homedata = os.homedir();
-	userdata = homedata + '/.config/Deezloader/';
-}
-
-const logsLocation = userdata+"logs.log";
-
-if(!fs.existsSync(userdata+"config.json")){
-	fs.outputFileSync(userdata+"config.json",fs.readFileSync(__dirname+path.sep+"default.json",'utf8'));
-}
-
-let configFile = require(userdata+path.sep+"config.json");
-
-if(typeof configFile.userDefined.numplaylistbyalbum != "boolean" || typeof configFile.userDefined.syncedlyrics != "boolean" || typeof configFile.userDefined.padtrck != "boolean" || typeof configFile.userDefined.albumNameTemplate != "string"){
-	fs.outputFileSync(userdata+"config.json",fs.readFileSync(__dirname+path.sep+"default.json",'utf8'));
-	configFile = require(userdata+path.sep+"config.json");
-}
+const { userdata, configFile } = require('./service/config')
+const logger = require('./service/logger')
 
 module.exports = new Deezer();
 
@@ -70,7 +43,7 @@ Deezer.prototype.init = function(username, password, callback) {
 
 					if(_token instanceof Array && _token[1]) {
 						self.apiQueries.api_token = _token[1];
-						console.log(`NEW TOKEN API: ${_token[1]}`)
+						logger.info(`New token API fetched from Deezer.`)
 						// GET USER ID
 						const userRegex = new RegExp(/{"USER_ID":"([^",]*)/g);
 						const userId = userRegex.exec(body)[1];
@@ -389,7 +362,7 @@ Deezer.prototype.getDownloadUrl = function(md5Origin, id, format, mediaVersion) 
 	var urlPart = md5Origin + "¤" + format + "¤" + id + "¤" + mediaVersion;
 	var md5sum = crypto.createHash('md5');
 	md5sum.update(new Buffer(urlPart, 'binary'));
-	md5val = md5sum.digest('hex');
+	let md5val = md5sum.digest('hex');
 	urlPart = md5val + "¤" + urlPart + "¤";
 	var cipher = crypto.createCipheriv("aes-128-ecb", new Buffer("jo6aey6haid2Teih"), new Buffer(""));
 	var buffer = Buffer.concat([cipher.update(urlPart, 'binary'), cipher.final()]);
@@ -407,14 +380,14 @@ Deezer.prototype.decryptTrack = function(writePath, track, callback) {
 				callback();
 			});
 		} else {
-			logs("Error","Decryption error");
+			logger.error('Decryption error.')
 			callback(err || new Error("Can't download the track"));
 		}
 	}).on("data", function(data) {
 		chunkLength += data.length;
 		self.onDownloadProgress(track, chunkLength);
 	}).on("abort", function() {
-		logs("Error","Decryption aborted");
+		logger.error('Decryption aborted.')
 		callback(new Error("aborted"));
 	});
 }
@@ -484,13 +457,12 @@ Deezer.prototype.onDownloadProgress = function(track, progress) {
 function getJSON(url, callback){
 	request.get({url: url, headers: this.httpHeaders, jar: true}, function(err, res, body) {
 		if(err || res.statusCode != 200 || !body) {
-			logs("Error","Unable to initialize Deezer API");
+			logger.error('Unable to initialize Deezer API.')
 			callback(new Error());
 		} else {
 			var json = JSON.parse(body);
 			if (json.error) {
-				console.log(json)
-				logs("Error","Wrong id");
+				logger.error('Wrong id.', {error: json.error})
 				callback(new Error());
 				return;
 			}
@@ -498,12 +470,3 @@ function getJSON(url, callback){
 		}
 	});
 }
-
-function logs(level, message, callback){
-	var str = "["+level+"]"+message;
-	console.log(str);
-	fs.appendFileSync(logsLocation, str+"\n");
-	return;
-}
-
-module.exports.logs = logs;

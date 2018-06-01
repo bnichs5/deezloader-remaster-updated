@@ -11,11 +11,12 @@
 		"electron-context-menu": "latest",
 		"electron-window-state-manager": "latest",
 		"express": "latest",
-		"fs-extra": "latest",
 		"flac-metadata": "latest",
+		"fs-extra": "latest",
 		"package.json": "latest",
 		"request": "latest",
+		"requestretry": "latest",
 		"socket.io": "latest",
-		"requestretry": "latest"
+		"winston": "^2.4.2"
 	}
 }

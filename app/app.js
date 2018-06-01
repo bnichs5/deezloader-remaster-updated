@@ -12,6 +12,8 @@
  *  Original work by ZzMTV <https://boerse.to/members/zzmtv.3378614/>
  * */
 
+// @ts-check
+
 const express = require('express');
 const app = express();
 const server = require('http').createServer(app);
@@ -25,55 +27,17 @@ const request = require('requestretry').defaults({maxAttempts: 2147483647, retry
 const os = require('os');
 const ID3Writer = require('./lib/browser-id3-writer');
 const Deezer = require('./deezer-api');
-const packagejson = require('./package.json');
 const path = require('path');
 const crypto = require('crypto');
-var userdata = "";
-var homedata = "";
-if(process.env.APPDATA){
-	userdata = process.env.APPDATA + path.sep + "Deezloader\\";
-	homedata = os.homedir();
-}else if(process.platform == "darwin"){
-	homedata = os.homedir();
-	userdata = homedata + '/Library/Application Support/Deezloader/';
-}else if(process.platform == "android"){
-	homedata = os.homedir() + "/storage/shared";
-	userdata = homedata + "/Deezloader/";
-}else{
-	homedata = os.homedir();
-	userdata = homedata + '/.config/Deezloader/';
-}
-
-if(!fs.existsSync(userdata+"config.json")){
-	fs.outputFileSync(userdata+"config.json",fs.readFileSync(__dirname+path.sep+"default.json",'utf8'));
-}
-
-let configFile = require(userdata+path.sep+"config.json");
-if(typeof configFile.userDefined.numplaylistbyalbum != "boolean" || typeof configFile.userDefined.syncedlyrics != "boolean" || typeof configFile.userDefined.padtrck != "boolean" || typeof configFile.userDefined.albumNameTemplate != "string"){
-	fs.outputFileSync(userdata+"config.json",fs.readFileSync(__dirname+path.sep+"default.json",'utf8'));
-	configFile = require(userdata+path.sep+"config.json");
-}
-
-// Main Constants
-const configFileLocation = userdata+"config.json";
-const autologinLocation = userdata+"autologin";
-const coverArtFolder = os.tmpdir() + path.sep + 'deezloader-imgs' + path.sep;
-const defaultDownloadDir = homedata + path.sep + "Music" + path.sep + 'Deezloader' + path.sep;
-const defaultSettings = {
-	"convertFrom": "",
-	"trackNameTemplate": "%artist% - %title%",
-	"playlistTrackNameTemplate": "%number% - %artist% - %title%",
-	"albumNameTemplate": "%artist% - %album%",
-	"createM3UFile": false,
-	"createArtistFolder": false,
-	"createAlbumFolder": false,
-	"downloadLocation": null,
-	"artworkSize": "/1400x1400.jpg",
-	"hifi": false,
-	"padtrck": false,
-	"syncedlyrics": false,
-	"numplaylistbyalbum": false
-};
+const {
+	configFile,
+	autologinLocation,
+	defaultDownloadDir,
+	coverArtFolder,
+	packageJson,
+	saveConfig,
+} = require('./service/config')
+const logger = require('./service/logger')
 
 // Setup the folders START
 let mainFolder = defaultDownloadDir;
@@ -88,7 +52,7 @@ initFolders();
 // Route and Create server
 app.use('/', express.static(__dirname + '/public/'));
 server.listen(configFile.serverPort);
-Deezer.logs('Info', 'Server is running @ localhost:' + configFile.serverPort);
+logger.info(`Server is running @ localhost: ${configFile.serverPort}`)
 
 //Autologin encryption/decryption
 
@@ -99,7 +63,7 @@ function alencrypt(input) {
 
 	var data = new Buffer(input).toString('binary');
 
-	key = new Buffer(ekey, "utf8");
+	let key = new Buffer(ekey, "utf8");
 	var cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
 
 	var encrypted;
@@ -113,13 +77,13 @@ function alencrypt(input) {
 function aldecrypt(encoded) {
 	var combined = new Buffer(encoded, 'hex');
 
-	key = new Buffer(ekey, "utf8");
+	let key = new Buffer(ekey, "utf8");
 
 	// Create iv
 	var iv = new Buffer(16);
 
 	combined.copy(iv, 0, 0, 16);
-	edata = combined.slice(16).toString('binary');
+	let edata = combined.slice(16).toString('binary');
 	// Decipher encrypted data
 	var decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
 
@@ -133,7 +97,7 @@ function aldecrypt(encoded) {
 // START sockets clusterfuck
 io.sockets.on('connection', function (socket) {
 	// change version
-	socket.emit('version', packagejson.version)
+	socket.emit('version', packageJson.version)
 	socket.downloadQueue = [];
 	socket.currentItem = null;
 	socket.lastQueueId = null;
@@ -141,38 +105,34 @@ io.sockets.on('connection', function (socket) {
 	request.get("https://pastebin.com/raw/BRZTQGkM", function (error, response, body) {
 		body = body.replace("\r","");
 		if(!error && response.statusCode == 200){
-			console.log(body);
-			if(body.split("\n")[0] != packagejson.version){
+			if(body.split("\n")[0] != packageJson.version){
 				socket.emit("newupdate",body.split("\n")[0], body.split("\n")[1]);
-				Deezer.logs('Info',"Outdated version, the latest is "+body.split("\n")[0]);
+				logger.info(`Outdated version. The latest one is ${body.split("\n")[0]}`)
 			}
 		}
 	});
+
 	socket.on("login", function (username, password, autologin) {
 		Deezer.init(username, password, function (err) {
 			if(err){
 				socket.emit("login", err.message);
-				Deezer.logs('Error',"Failed to login, "+err.message);
+				logger.error(`Failed to login.`, {err: err.message})
 			}else{
 				if(autologin){
 					var data = username + "\n" + password;
 					fs.outputFile(autologinLocation, alencrypt(data) , function(){
 						if(!err){
-							Deezer.logs('Info',"Added autologin successfully");
+							logger.info('Added autologin successfully')
 						}else{
-							Deezer.logs('Info',"Failed to add autologin file");
+							logger.warn('Failed to add autologin file')
 						}
 					});
 				}
 				socket.emit("login", "none");
-				Deezer.logs('Info',"Logged in successfully");
-				if (!configFile.opens) configFile.opens = 0;
+				logger.info('Logged in successfully')
 				configFile.opens++;
-				fs.outputFile(configFileLocation, JSON.stringify(configFile, null, 2), function (err) {
-					if (err) return;
-					Deezer.logs('Info',"Settings updated");
-					initFolders();
-				});
+				saveConfig()
+				initFolders()
 				if (configFile.opens == 3 || configFile.opens % 10 == 0) {
 					socket.emit('donation');
 					request.get("https://pastebin.com/raw/a6qqEMdm", function (error, response, body) {})
@@ -183,14 +143,14 @@ io.sockets.on('connection', function (socket) {
 	socket.on("autologin", function(){
 		fs.readFile(autologinLocation, function(err, data){
 			if(err){
-				Deezer.logs('Info',"No auto login found");
+				logger.info('No auto login found.')
 				return;
 			}
 			try{
 				var fdata = aldecrypt(data.toString('utf8'));
 
 			}catch(e){
-				Deezer.logs('Warning',"Invalid autologin file, deleting");
+				logger.warn('Invalid autologin file. Deleting it.')
 				fs.unlink(autologinLocation,function(){
 				});
 				return;
@@ -201,7 +161,7 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on("logout", function(){
-		Deezer.logs('Info',"Logged out");
+		logger.info('Logged out.')
 		fs.unlink(autologinLocation,function(){
 		});
 		return;
@@ -283,7 +243,7 @@ io.sockets.on('connection', function (socket) {
 		}
 
 		if (downloading.type == "track") {
-			Deezer.logs('Info',"Registered a track "+downloading.id);
+			logger.info(`Registered a track: ${downloading.id}.`)
 			downloadTrack([downloading.id,0], downloading.settings, null, function (err) {
 				if (err) {
 					downloading.failed++;
@@ -295,11 +255,10 @@ io.sockets.on('connection', function (socket) {
 					socket.downloadQueue.shift();
 				}
 				socket.currentItem = null;
-				//fs.rmdirSync(coverArtDir);
 				queueDownload(getNextDownload());
 			});
 		} else if (downloading.type == "playlist") {
-			Deezer.logs('Info',"Registered a playlist "+downloading.id);
+			logger.info(`Registered a playlist: ${downloading.id}.`)
 			Deezer.getPlaylistTracks(downloading.id, function (tracks, err) {
 				downloading.playlistContent = tracks.data.map((t) => {
 					if(t.FALLBACK){
@@ -310,9 +269,10 @@ io.sockets.on('connection', function (socket) {
 					return [t.id,0];
 				});
 				downloading.settings.plName = downloading.name;
+				// async.eachLimit(downloading.playlistContent, 10, function (id, callback) {
 				async.eachSeries(downloading.playlistContent, function (id, callback) {
 					if (downloading.cancelFlag) {
-						Deezer.logs('Info',"Stopping the playlist queue");
+						logger.info(`Stopping the playlist queue.`)
 						callback("stop");
 						return;
 					}
@@ -330,7 +290,7 @@ io.sockets.on('connection', function (socket) {
 						callback();
 					});
 				}, function (err) {
-					Deezer.logs('Info',"Playlist finished "+downloading.name);
+					logger.info(`Playlist finished ${downloading.name}.`)
 					if(typeof socket.downloadQueue[0] != 'undefined'){
 						socket.emit("downloadProgress", {
 							queueId: socket.downloadQueue[0].queueId,
@@ -344,7 +304,7 @@ io.sockets.on('connection', function (socket) {
 				});
 			});
 		} else if (downloading.type == "album") {
-			Deezer.logs('Info',"Registered an album "+downloading.id);
+			logger.info(`Registered an album: ${downloading.id}.`)
 			Deezer.getAlbumTracks(downloading.id, function (tracks, err) {
 				downloading.playlistContent = tracks.data.map((t) => {
 					if(t.FALLBACK){
@@ -359,7 +319,7 @@ io.sockets.on('connection', function (socket) {
 				downloading.settings.artName = downloading.artist;
 				async.eachSeries(downloading.playlistContent, function (id, callback) {
 					if (downloading.cancelFlag) {
-						Deezer.logs('Info',"Stopping the album queue");
+						logger.info('Stopping the album queue.')
 						callback("stop");
 						return;
 					}
@@ -384,7 +344,7 @@ io.sockets.on('connection', function (socket) {
 						}
 						socket.emit("updateQueue", downloading);
 					}
-					Deezer.logs('Info',"Album finished "+downloading.name);
+					logger.info(`Album finished: ${downloading.name}.`)
 					if(typeof socket.downloadQueue[0] != 'undefined'){
 						socket.emit("downloadProgress", {
 							queueId: socket.downloadQueue[0].queueId,
@@ -713,43 +673,39 @@ io.sockets.on('connection', function (socket) {
 		}
 
 		configFile.userDefined = settings.userDefined;
-		fs.outputFile(configFileLocation, JSON.stringify(configFile, null, 2), function (err) {
-			if (err) return;
-			Deezer.logs('Info',"Settings updated");
-			initFolders();
-		});
+		saveConfig()
 	});
 
 	function downloadTrack(id, settings, altmetadata, callback) {
-		Deezer.logs('Info',"Getting track data");
+		logger.info('Getting track data.')
 		Deezer.getTrack(id[0], function (track, err) {
 			if (err) {
 				if(id[1] != 0){
-					Deezer.logs('Warning',"Failed to download track, falling on alternative");
+					logger.warn('Failed to download track, falling on alternative.')
 					downloadTrack([id[1],0], settings, null, function(err){
 						callback(err);
 					});
 				}else{
-					Deezer.logs('Error',"Failed to download track");
+					logger.error('Failed to download track.')
 					callback(err);
 				}
 				return;
 			}
-			Deezer.logs('Info',"Getting album data");
+			logger.info('Getting album data.')
 			Deezer.getAlbum(track["ALB_ID"], function(res, err){
 				if(err){
 					if(id[1] != 0){
-						Deezer.logs('Warning',"Failed to download track, falling on alternative");
+						logger.warn('Failed to download track, falling on alternative.')
 						downloadTrack([id[1],0], settings, null, function(err){
 							callback(err);
 						});
 					}else{
-						Deezer.logs('Error',"Failed to download track");
+						logger.error('Failed to download track.')
 						callback(new Error("Album does not exists."));
 					}
 					return;
 				}
-				Deezer.logs('Info',"Getting ATrack data");
+				logger.info('Getting track data.')
 				Deezer.getATrack(res.tracks.data[res.tracks.data.length - 1].id, function(tres){
 					track.trackSocket = socket;
 
@@ -943,9 +899,9 @@ io.sockets.on('connection', function (socket) {
 							fs.outputFile(writePath.substring(0,writePath.length-4)+".lrc",lyricsbuffer,function(){});
 						}
 					}
-					Deezer.logs('Info','Downloading file to ' + writePath);
+					logger.info(`Downloading file to: ${writePath}.`)
 					if (fs.existsSync(writePath)) {
-						Deezer.logs('Info',"Already downloaded: " + metadata.artist + ' - ' + metadata.title);
+						logger.info(`Already downloaded: ${metadata.artist} - ${metadata.title}.`)
 						callback();
 						return;
 					}
@@ -961,52 +917,52 @@ io.sockets.on('connection', function (socket) {
 						}
 						if(fs.existsSync(imgPath) && !imgPath.includes(coverArtFolder)){
 							metadata.imagePath = (imgPath).replace(/\\/g, "/");
-							Deezer.logs('Info',"Starting the download process CODE:1");
+							logger.info(`Starting the download process CODE:1.`)
 							condownload();
 						}else{
 							request.get(metadata.image, {encoding: 'binary'}, function(error,response,body){
 								if(error){
-									Deezer.logs('Error', error.stack);
+									logger.error(`${error.stack}.`)
 									metadata.image = undefined;
 									metadata.imagePath = undefined;
 									return;
 								}
 								fs.outputFile(imgPath,body,'binary',function(err){
 									if(err){
-										Deezer.logs('Error', err.stack);
-									metadata.image = undefined;
-									metadata.imagePath = undefined;
+										logger.error(`${error.stack}.`)
+										metadata.image = undefined;
+										metadata.imagePath = undefined;
 										return;
 									}
 									metadata.imagePath = (imgPath).replace(/\\/g, "/");
-									Deezer.logs('Info',"Starting the download process CODE:2");
+									logger.info('Starting the download process CODE:2.')
 									condownload();
 								})
 							});
 						}
 					}else{
 						metadata.image = undefined;
-						Deezer.logs('Info',"Starting the download process CODE:3");
+						logger.info('Starting the download process CODE:3.')
 						condownload();
 					}
 					function condownload(){
 						var tempPath = writePath+".temp";
-						Deezer.logs('Info',"Downloading and decrypting");
+						logger.info('Downloading and decrypting.')
 						Deezer.decryptTrack(tempPath,track, function (err) {
 							if (err && err.message == "aborted") {
 								socket.currentItem.cancelFlag = true;
-								Deezer.logs('Info',"Track got aborted");
+						logger.info('Track got aborted.')
 								callback();
 								return;
 							}
 							if (err) {
 								Deezer.hasTrackAlternative(id[0], function (alternative, err) {
 									if (err || !alternative) {
-										Deezer.logs('Error',"Failed to download: " + metadata.artist + " - " + metadata.title);
+										logger.error(`Failed to download: ${metadata.artist} - ${metadata.title}.`)
 										callback(err);
 										return;
 									}
-									Deezer.logs('Error',"Failed to download: " + metadata.artist + " - " + metadata.title+", falling on alternative");
+									logger.warn(`Failed to downloaded: ${metadata.artist} - ${metadata.title}, falling on alternative.`)
 									downloadTrack([alternative.SNG_ID,0], settings, metadata, callback);
 								});
 								return;
@@ -1018,7 +974,7 @@ io.sockets.on('connection', function (socket) {
 									fs.appendFileSync(filepath + "playlist.m3u", filename + ".mp3\r\n");
 								}
 							}
-							Deezer.logs('Info',"Downloaded: " + metadata.artist + " - " + metadata.title);
+							logger.info(`Downloaded: ${metadata.artist} - ${metadata.title}.`)
 							metadata.artist = '';
 							var first = true;
 							track['ARTISTS'].forEach(function(artist){
@@ -1233,14 +1189,7 @@ io.sockets.on('connection', function (socket) {
  */
 function updateSettingsFile(config, value) {
 	configFile.userDefined[config] = value;
-
-	fs.outputFile(configFileLocation, JSON.stringify(configFile, null, 2), function (err) {
-		if (err) return;
-		Deezer.logs('Info',"Settings updated");
-
-		// FIXME: Endless Loop, due to call from initFolders()...crashes soon after startup
-		// initFolders();
-	});
+	saveConfig()
 }
 
 
@@ -1362,12 +1311,10 @@ function magicInterval(success, delay, repetitions) {
 
 // Show crash error in console for debugging
 process.on('uncaughtException', function (err) {
-	Deezer.logs('Error',err.stack,function(){
-		socket.emit("message", "Critical Error, report to the developer", err.stack);
-	});
+	logger.error(`${err.stack}.`)
 });
 
 // Exporting vars
 module.exports.mainFolder = mainFolder;
-module.exports.defaultSettings = defaultSettings;
+// module.exports.defaultSettings = defaultSettings;
 module.exports.defaultDownloadDir = defaultDownloadDir;
