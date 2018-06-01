@@ -3,7 +3,9 @@
 // Variables & constants
 const socket = io.connect(window.location.href);
 const startingChartCountry = 'UK';
+console.log(mainApp)
 if(typeof mainApp !== "undefined"){
+	console.log(mainApp.defaultSettings)
 	var defaultUserSettings = mainApp.defaultSettings;
 	var defaultDownloadLocation = mainApp.defaultDownloadDir;
 }

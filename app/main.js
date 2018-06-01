@@ -5,9 +5,9 @@ const path = require('path');
 const electron = require('electron');
 const os = require('os');
 const app = electron.app;
-const { userdata, configFile } = require('./service/config')
+const { settings } = require('./service/config')
 
-const theApp = require('./app');
+const socketStarter = require('./server')
 const BrowserWindow = electron.BrowserWindow;
 const WindowStateManager = require('electron-window-state-manager');
 
@@ -40,7 +40,7 @@ function createWindow () {
 	// mainWindow.setMenu(null);
 
 	// and load the index.html of the app.
-	mainWindow.loadURL('http://localhost:' + configFile.serverPort);
+	mainWindow.loadURL('http://localhost:' + settings.serverPort());
 
 	mainWindow.on('closed', function () {
 		mainWindow = null;
