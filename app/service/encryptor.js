@@ -1,5 +1,3 @@
-// @ts-check
-
 const crypto = require('crypto')
 
 const ekey = "DeezLadRebExtLrdDeezLadRebExtLrd"

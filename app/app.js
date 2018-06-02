@@ -12,8 +12,6 @@
  *  Original work by ZzMTV <https://boerse.to/members/zzmtv.3378614/>
  * */
 
-// @ts-check
-
 const server = require('./server')
 const https = require('https')
 const mflac = require('flac-metadata')

@@ -1,5 +1,3 @@
-// @ts-check
-
 const path = require('path')
 const electron = require('electron')
 const os = require('os')

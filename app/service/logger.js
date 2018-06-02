@@ -1,5 +1,3 @@
-// @ts-check
-
 const winston = require('winston')
 const path = require('path')
 const util = require('util')

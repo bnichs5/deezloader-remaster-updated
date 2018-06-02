@@ -1,5 +1,3 @@
-// @ts-check
-
 // const NRrequest = require('request');
 /** @type {*} */
 const request = require('requestretry').defaults({maxAttempts: 3, retryDelay: 500, timeout: 5000})

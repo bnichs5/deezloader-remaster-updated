@@ -1,5 +1,3 @@
-// @ts-check
-
 const logger = require('./logger')
 const path = require('path')
 const fs = require('fs-extra')

@@ -1,5 +1,3 @@
-// @ts-check
-
 const fs = require('fs-extra')
 const deezer = require('./deezer')
 const logger = require('./logger')

@@ -1,5 +1,3 @@
-// @ts-check
-
 const logger = require('./logger')
 const currentVersion = require('../package.json').version
 const request = require('requestretry').defaults({

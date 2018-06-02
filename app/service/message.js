@@ -1,5 +1,3 @@
-// @ts-check
-
 const { settings } = require('./config')
 
 const shouldOpen = () => {
