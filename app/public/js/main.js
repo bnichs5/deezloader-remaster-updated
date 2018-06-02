@@ -562,7 +562,7 @@ socket.on("getTrackList", function (data) {
 	}
 
 	// ########################################
-	if(data.reqType == 'album' || data.reqType == 'playlist'){
+	if(data.reqType == 'album' || data.reqType == 'playlist') {
 		var tableBody = $('#modal_trackListSelective_table_trackListSelective_tbody_trackListSelective');
 	} else {
 		var tableBody = $('#modal_trackList_table_trackList_tbody_trackList');
@@ -613,7 +613,7 @@ socket.on("getTrackList", function (data) {
 					'<td><div class="valign-wrapper"><input class="trackCheckbox valign" type="checkbox" id="trackChk'+ i +'" value="' + trackList[i].link + '"><label for="trackChk' + i + '"></label></div></tr>');
 		}
 	} else if(data.reqType == 'album') {
-		trackListSelectiveModalApp.title = 'Tracklist';
+		trackListSelectiveModalApp.title = 'Album';
 
 		trackListSelectiveModalApp.head = [
 			{title: '#'},
@@ -624,20 +624,20 @@ socket.on("getTrackList", function (data) {
 		];
 
 		$('.selectAll').prop('checked', false);
-
-		if (trackList[trackList.length-1].disk_number != 1){
-			baseDisc = 0
-		} else {
-			baseDisc =1
-		};
+		// if (trackList[trackList.length-1].disk_number != 1){
+		// 	baseDisc = 0
+		// } else {
+		// 	baseDisc =1
+		// };
 
 		for (var i = 0; i < trackList.length; i++) {
-			discNum = trackList[i].disk_number
-			if (discNum != baseDisc){
-				$(tableBody).append('<tr><td colspan="4" style="opacity: 0.54;"><i class="material-icons valignicon tiny">album</i> '+discNum+'</td></tr>');
-				baseDisc = discNum;
-			}
-			$(tableBody).append('<tr><td>' + trackList[i].track_position + '</td>' +
+
+			// discNum = trackList[i].disk_number
+			// if (discNum != baseDisc){
+			// 	$(tableBody).append('<tr><td colspan="4" style="opacity: 0.54;"><i class="material-icons valignicon tiny">album</i> '+discNum+'</td></tr>');
+			// 	baseDisc = discNum;
+			// }
+			$(tableBody).append('<tr><td>' + (i+1) + '</td>' +
 					(trackList[i].explicit_lyrics ? '<td><i class="material-icons valignicon tiny materialize-red-text tooltipped" data-tooltip="Explicit">error_outline</i> ' : '<td> ') + trackList[i].title + '</td>' +
 					'<td>' + trackList[i].artist.name + '</td>' +
 					'<td>' + convertDuration(trackList[i].duration) + '</td>' +
@@ -653,8 +653,8 @@ socket.on("getTrackList", function (data) {
 		];
 
 		for (var i = 0; i < trackList.length; i++) {
-
-			$(tableBody).append('<tr><td>' + (i + 1) + '</td>' +
+			const trackPosition = i + 1
+			$(tableBody).append('<tr><td>' + trackPosition + '</td>' +
 					(trackList[i].explicit_lyrics ? '<td><i class="material-icons valignicon tiny materialize-red-text tooltipped" data-tooltip="Explicit">error_outline</i> ' : '<td> ') +
 					trackList[i].title + '</td>' +
 					'<td>' + trackList[i].artist.name + '</td>' +

@@ -163,41 +163,37 @@ server.onConnection((socket) => {
 				queueDownload(getNextDownload())
 			}
 
-			Deezer.getPlaylist(downloading.id)
-				.then(playlist => {
-					downloading.playlistContent = playlist.tracks.data.map((t) => {
-						if (t.FALLBACK) {
-							if (t.FALLBACK.SNG_ID) {
-								return [t.id, t.FALLBACK.SNG_ID]
-							}
-						}
-						return [t.id, 0]
-					})
-					downloading.settings.plName = downloading.name
-					// async.eachLimit(downloading.playlistContent, 10, function (id, callback) {
-					async.eachSeries(downloading.playlistContent, function (id, callback) {
-						if (downloading.cancelFlag) {
-							logger.info(`Stopping the playlist queue.`)
-							callback('stop')
-							return;
-						}
-						downloading.settings.playlist = {
-							position: downloading.playlistContent.indexOf(id),
-							fullSize: downloading.playlistContent.length
-						}
-						logger.info(`Starting download of: ${id}.`)
-						downloadTrack(id, downloading.settings, null, function (err) {
-							if (!err) {
-								downloading.downloaded++
-							} else {
-								downloading.failed++
-							}
-							socket.emit('updateQueue', downloading)
-							callback()
-						});
-					}, afterEach)
-				})
-				.catch(e => { throw new Error(e) })
+			downloading.playlistContent = downloading.tracks.data.map((t) => {
+				if (t.FALLBACK) {
+					if (t.FALLBACK.SNG_ID) {
+						return [t.id, t.FALLBACK.SNG_ID]
+					}
+				}
+				return [t.id, 0]
+			})
+			downloading.settings.plName = downloading.name
+			// async.eachLimit(downloading.playlistContent, 10, function (id, callback) {
+			async.eachSeries(downloading.playlistContent, function (id, callback) {
+				if (downloading.cancelFlag) {
+					logger.info(`Stopping the playlist queue.`)
+					callback('stop')
+					return;
+				}
+				downloading.settings.playlist = {
+					position: downloading.playlistContent.indexOf(id),
+					fullSize: downloading.playlistContent.length
+				}
+				logger.info(`Starting download of: ${id}.`)
+				downloadTrack(id, downloading.settings, null, function (err) {
+					if (!err) {
+						downloading.downloaded++
+					} else {
+						downloading.failed++
+					}
+					socket.emit('updateQueue', downloading)
+					callback()
+				});
+			}, afterEach)
 
 		} else if (downloading.type == "album") {
 			logger.info(`Registered an album: ${downloading.id}.`)
@@ -288,7 +284,8 @@ server.onConnection((socket) => {
 					failed: 0,
 					queueId: queueId,
 					id: playlist.id,
-					type: 'playlist'
+					type: 'playlist',
+					tracks: playlist.tracks,
 				};
 				_playlist.settings = data.settings || {};
 				addToQueue(_playlist);
@@ -297,45 +294,38 @@ server.onConnection((socket) => {
 	})
 
 	socket.on("downloadalbum", function (data) {
-		Deezer.getAlbum(data.id, function (album, err) {
-			if (err) {
-				return;
-			}
-			console.log(album.tracks)
-			let queueId = "id" + Math.random().toString(36).substring(2);
-			let _album = {
-				name: album["title"],
-				label: album["label"],
-				artist: album["artist"].name,
-				size: album.tracks.data.length,
-				downloaded: 0,
-				failed: 0,
-				queueId: queueId,
-				id: album["id"],
-				type: "album",
-				tracks: album.tracks,
-			};
-			_album.settings = data.settings || {}
-			addToQueue(_album)
-		});
+		Deezer.getAlbum(data.id)
+			.then(album => {
+				let queueId = "id" + Math.random().toString(36).substring(2);
+				let _album = {
+					name: album["title"],
+					label: album["label"],
+					artist: album["artist"].name,
+					size: album.tracks.data.length,
+					downloaded: 0,
+					failed: 0,
+					queueId: queueId,
+					id: album["id"],
+					type: "album",
+					tracks: album.tracks,
+				};
+				_album.settings = data.settings || {}
+				addToQueue(_album)
+			})
+			.catch(e => { throw new Error(e) })
 	});
 
 	socket.on("downloadartist", function (data) {
-		Deezer.getArtist(data.id, function (artist, err) {
-			if (err) {
-				return;
-			}
-			Deezer.getArtistAlbums(data.id, function (albums, err) {
-				console.log(albums)
-				if (err) {
-					return;
-				}
+		let artist
+		Deezer.getArtist(data.id)
+			.then(a => {
+				artist = a
+				return Deezer.getArtistAlbums(data.id)
+			})
+			.then(albums => {
 				for (let i = 0; i < albums.data.length; i++) {
-
-					Deezer.getAlbumPromise(albums.data[i].id)
+					Deezer.getAlbum(albums.data[i].id)
 						.then(album => {
-							console.log(`ALBUM ${album.title}`)
-							console.log(album.tracks.data)
 							let queueId = `id${Math.random().toString(36).substring(2)}`
 							let _album = {
 								name: album.title,
@@ -353,55 +343,31 @@ server.onConnection((socket) => {
 							addToQueue(_album);
 						})
 						.catch(e => { throw new Error(e) })
-
 				}
-			});
-		});
-	});
-
-	socket.on("getChartsTopCountry", function () {
-		Deezer.getChartsTopCountry(function (charts, err) {
-			if (err) {
-				return;
-			}
-			if (charts) {
-				charts = charts.data || [];
-			} else {
-				charts = [];
-			}
-			socket.emit("getChartsTopCountry", {
-				charts: charts.data,
-				err: err
-		});
-	});
-	});
+			})
+			.catch(e => { throw new Error(e) })
+	})
 
 	socket.on("getChartsCountryList", function (data) {
-		Deezer.getChartsTopCountry(function (charts, err) {
-			if (err) {
-				return;
-			}
-			if (charts) {
-				charts = charts.data || [];
-			} else {
-				charts = [];
-			}
-			let countries = [];
-			for (let i = 0; i < charts.length; i++) {
-				let obj = {
-					country: charts[i].title.replace("Top ", ""),
-					picture_small: charts[i].picture_small,
-					picture_medium: charts[i].picture_medium,
-					picture_big: charts[i].picture_big
-				};
-				countries.push(obj);
-			}
-			socket.emit("getChartsCountryList", {
-				countries: countries,
-				selected: data.selected
-		});
-	});
-	});
+		Deezer.getChartsTopCountry()
+			.then(charts => {
+				let countries = [];
+				for (let i = 0; i < charts.length; i++) {
+					let obj = {
+						country: charts[i].title.replace("Top ", ""),
+						picture_small: charts[i].picture_small,
+						picture_medium: charts[i].picture_medium,
+						picture_big: charts[i].picture_big
+					};
+					countries.push(obj);
+				}
+				socket.emit("getChartsCountryList", {
+					countries: countries,
+					selected: data.selected
+				});
+			})
+			.catch(e => { throw new Error(e) })
+	})
 
 	socket.on("getChartsTrackListByCountry", function (data) {
 		if (!data.country) {
@@ -411,73 +377,60 @@ server.onConnection((socket) => {
 			return;
 		}
 
-		Deezer.getChartsTopCountry(function (charts, err) {
-			if (err) {
-				return;
-			}
-			if (charts) {
-				charts = charts.data || [];
-			} else {
-				charts = [];
-			}
-			let countries = [];
-			for (let i = 0; i < charts.length; i++) {
-				countries.push(charts[i].title.replace("Top ", ""));
-			}
-
-			if (countries.indexOf(data.country) == -1) {
-				socket.emit("getChartsTrackListByCountry", {
-					err: "Country not found"
-				});
-				return;
-			}
-
-			let playlistId = charts[countries.indexOf(data.country)].id;
-
-			Deezer.getPlaylist(playlistId)
-				.then(playlist => {
-					socket.emit('getChartsTrackListByCountry', {
-						playlist: charts[countries.indexOf(data.country)],
-						tracks: playlist.tracks.data
-					})
+		let charts
+		let countries = []
+		Deezer.getChartsTopCountry()
+			.then(c => {
+				charts = c
+				for (let i = 0; i < charts.length; i++) {
+					countries.push(charts[i].title.replace("Top ", ""));
+				}
+				if (countries.indexOf(data.country) == -1) {
+					socket.emit("getChartsTrackListByCountry", {
+						err: "Country not found"
+					});
+					return;
+				}
+				let playlistId = charts[countries.indexOf(data.country)].id;
+				return Deezer.getPlaylist(playlistId)
+			})
+			.then(playlist => {
+				socket.emit('getChartsTrackListByCountry', {
+					playlist: charts[countries.indexOf(data.country)],
+					tracks: playlist.tracks.data
 				})
-				.catch(e => {
-					socket.emit('getChartsTrackListByCountry', { err })
-				})
-		})
+			})
+			.catch(e => {
+				socket.emit('getChartsTrackListByCountry', { error: e })
+			})
 	})
 
-	// PLAYLISTS
 	socket.on('my_playlists', function () {
 		Deezer.getMyPlaylists().then(searchObject => {
 			socket.emit('my_playlists', searchObject.data)
 		})
-		// Deezer.getMyPlaylists(function (searchObject) {
-		// 	socket.emit('my_playlists', searchObject.data);
-		// });
-	});
-	// END PLAYLISTS
+	})
 
-	socket.on("search", function (data) {
+	socket.on('search', function (data) {
 		data.type = data.type || "track";
-		if (["track", "playlist", "album", "artist"].indexOf(data.type) == -1) {
-			data.type = "track";
+		if (['track', 'playlist', 'album', 'artist'].indexOf(data.type) == -1) {
+			data.type = 'track'
 		}
 
-		Deezer.search(encodeURIComponent(data.text), data.type, function (searchObject, err) {
-			try {
-				socket.emit("search", {
+		Deezer.search(encodeURIComponent(data.text), data.type)
+			.then(searchObject => {
+				socket.emit('search', {
 					type: data.type,
 					items: searchObject.data
-				});
-			} catch (e) {
-				socket.emit("search", {
+				})
+			})
+			.catch(e => {
+				socket.emit('search', {
 					type: data.type,
 					items: []
-				});
-			}
-		});
-	});
+				})
+			})
+	})
 
 	socket.on("getInformation", function (data) {
 		if (!data.type || (["track", "playlist", "album", "artist"].indexOf(data.type) == -1) || !data.id) {
@@ -519,43 +472,61 @@ server.onConnection((socket) => {
 		}
 
 		if (data.type == 'artist') {
-			Deezer.getArtistAlbums(data.id, function (response, err) {
-				if (err) {
+			Deezer.getArtistAlbums(data.id)
+				.then(albums => {
+					socket.emit("getTrackList", {
+						response: albums,
+						id: data.id,
+						reqType: data.type
+					})
+				})
+				.catch(e => {
 					socket.emit("getTrackList", {
 						err: "wrong id",
 						response: {},
 						id: data.id,
 						reqType: data.type
-					});
-					return;
-				}
-				socket.emit("getTrackList", {
-					response: response,
-					id: data.id,
-					reqType: data.type
-			});
-			});
+					})
+				})
 		} else {
-			let reqType = data.type.charAt(0).toUpperCase() + data.type.slice(1);
-
-			Deezer["get" + reqType + "Tracks"](data.id, function (response, err) {
-				if (err) {
-					socket.emit("getTrackList", {
-						err: "wrong id",
-						response: {},
-						id: data.id,
-						reqType: data.type
-					});
-					return;
-				}
-				socket.emit("getTrackList", {
-					response: response,
-					id: data.id,
-					reqType: data.type
-			});
-			});
+			// either ALBUM or PLAYLIST
+			if (data.type == 'album') {
+				Deezer.getAlbum(data.id)
+					.then(album => {
+						socket.emit("getTrackList", {
+							response: album.tracks,
+							id: data.id,
+							reqType: data.type
+						})
+					})
+					.catch(e => {
+						socket.emit('getTrackList', {
+							err: 'wrong id',
+							response: {},
+							id: data.id,
+							reqType: data.type
+						})
+					})
+			}
+			if (data.type == 'playlist') {
+				Deezer.getPlaylist(data.id)
+					.then(playlist => {
+						socket.emit("getTrackList", {
+							response: playlist.tracks,
+							id: data.id,
+							reqType: data.type
+						})
+					})
+					.catch(e => {
+						socket.emit('getTrackList', {
+							err: 'wrong id',
+							response: {},
+							id: data.id,
+							reqType: data.type
+						})
+					})
+			}
 		}
-
 	});
 
 	socket.on("cancelDownload", function (data) {
@@ -634,27 +605,18 @@ server.onConnection((socket) => {
 				return;
 			}
 			logger.info('Getting album data.')
-			Deezer.getAlbum(track["ALB_ID"], function (res, err) {
-				if (err) {
-					if (id[1] != 0) {
-						logger.warn('Failed to download track, falling on alternative.')
-						downloadTrack([id[1], 0], options, null, function (err) {
-							callback(err);
-						});
-					} else {
-						logger.error('Failed to download track.')
-						callback(new Error("Album does not exists."));
-					}
-					return;
-				}
-				logger.info('Getting track data.')
-				Deezer.getATrack(res.tracks.data[res.tracks.data.length - 1].id, function (tres) {
+			let albumRes
+			Deezer.getAlbum(track['ALB_ID'])
+				.then(res => {
+					logger.info('Getting track data.')
+					albumRes = res
+					return Deezer.getATrack(res.tracks.data[res.tracks.data.length - 1].id)
+				})
+				.then(tres => {
 					track.trackSocket = socket;
-
 					options = options || {};
-					// winston.log('debug', 'TRACK:', track);
 					if (track["VERSION"]) track["SNG_TITLE"] += " " + track["VERSION"];
-					var ajson = res;
+					var ajson = albumRes;
 					var tjson = tres;
 					if (track["SNG_CONTRIBUTORS"]) {
 						if (track["SNG_CONTRIBUTORS"].composer) {
@@ -916,16 +878,17 @@ server.onConnection((socket) => {
 								return;
 							}
 							if (err) {
-								Deezer.hasTrackAlternative(id[0], function (alternative, err) {
-									if (err || !alternative) {
-										logger.error(`Failed to download: ${metadata.artist} - ${metadata.title}.`)
-										callback(err);
-										return;
-									}
-									logger.warn(`Failed to downloaded: ${metadata.artist} - ${metadata.title}, falling on alternative.`)
-									downloadTrack([alternative.SNG_ID, 0], options, metadata, callback);
-								});
-								return;
+								Deezer.hasTrackAlternative(id[0])
+									.then(alternative => {
+										if (!alternative) throw new Error(`Failed to download: ${metadata.artist} - ${metadata.title}.`)
+										logger.warn(`Failed to downloaded: ${metadata.artist} - ${metadata.title}, falling on alternative.`)
+										downloadTrack([alternative.SNG_ID, 0], options, metadata, callback)
+									})
+									.catch(e => {
+										logger.warn(`Failed to downloaded: ${metadata.artist} - ${metadata.title}.`)
+										callback(e)
+									})
+								return
 							}
 							if (options.createM3UFile && options.playlist) {
 								if (track.format == 9) {
@@ -1125,9 +1088,20 @@ server.onConnection((socket) => {
 							callback();
 						});
 					}
-				});
-			});
-		});
+				})
+				.catch(e => {
+					if (id[1] != 0) {
+						logger.warn('Failed to download track, falling on alternative.')
+						downloadTrack([id[1], 0], options, null, function (err) {
+							callback(err)
+						})
+					} else {
+						logger.error('Failed to download track.')
+						callback(new Error("Album does not exists."))
+					}
+				})
+
+		})
 	}
 
 	function checkIfAlreadyInQueue(id) {
@@ -1217,20 +1191,15 @@ function pad(str, max) {
  * @return string
  */
 function splitNumber(str, total) {
-	console.log(`Str: ${str}. Total: ${total}`)
 	str = str.toString();
 	var i = str.indexOf("/");
 	if (total && i > 0) {
-		console.log(`Return ${str.slice(i + 1, str.length)}`)
 		return str.slice(i + 1, str.length);
 	} else if (i > 0) {
-		console.log(`Return ${str.slice(0, i)}`)
 		return str.slice(0, i);
 	} else {
-		console.log(`Return ${str}`)
 		return str;
 	}
-	console.log(`Return: ${i > 0 ? str.slice(0, i) : str}`)
 	return i > 0 ? str.slice(0, i) : str;
 }
 

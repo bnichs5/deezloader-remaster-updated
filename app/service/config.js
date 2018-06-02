@@ -57,7 +57,6 @@ const userSettings = {
   read: () => configFile.userDefined,
 }
 
-
 const getDownloadDir = () => {
   ensureDownloadDir()
   return configFile.userDefined.downloadLocation
