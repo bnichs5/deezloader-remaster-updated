@@ -1,7 +1,7 @@
 // @ts-check
 
 const fs = require('fs-extra')
-const Deezer = require('../deezer-api')
+const deezer = require('./deezer')
 const logger = require('./logger')
 const config = require('./config')
 const encryptor = require('./encryptor')
@@ -16,13 +16,8 @@ const request = require('requestretry').defaults({
 })
 
 const login = (socket, username, password, autoLoginChecked) => {
-  Deezer.init(username, password, function (err) {
-    if (err) {
-      socket.emit("login", err.message);
-      logger.error(`Failed to login.`, {
-        err: err.message
-      })
-    } else {
+  deezer.init(username, password)
+    .then(() => {
       if (autoLoginChecked) {
         let data = `${username}:${password}`
         save(encryptor.encrypt(data))
@@ -33,8 +28,13 @@ const login = (socket, username, password, autoLoginChecked) => {
         socket.emit('donation')
         request.get('https://pastebin.com/raw/a6qqEMdm', function (error, response, body) {})
       }
-    }
-  })
+    })
+    .catch(e => {
+      socket.emit("login", e.message);
+      logger.error(`Failed to login.`, {
+        err: e.message
+      })
+    })
 }
 
 const autoLogin = (socket) => {
