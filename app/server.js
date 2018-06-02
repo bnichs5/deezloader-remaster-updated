@@ -14,10 +14,6 @@ server.listen(settings.serverPort())
 logger.info(`Server is running @ localhost: ${settings.serverPort()}`)
 
 logger.info('Waiting for socket to connect.')
-// module.exports = { socket: io.sockets.on }
-// io.sockets.on('connection', (socket) => {
-//   module.exports = { socket }
-// })
 
 module.exports = {
   onConnection: (callback) => {

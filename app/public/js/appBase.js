@@ -3,8 +3,6 @@ if(typeof require !== "undefined"){
 	var remote = require('electron').remote;
 	var dialog = remote.dialog;
 	var packageFile = remote.require('./package.json');
-	var mainApp = remote.require('./app');
-	var path = remote.require('path');
 }
 const version = (typeof packageFile === 'undefined') ? $("sup").html() : packageFile.version;
 (function () {

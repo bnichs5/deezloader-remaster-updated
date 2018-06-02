@@ -270,8 +270,47 @@ const cancelDecryptTrack = function() {
 	}
 }
 
-const onDownloadProgress = function(track, progress) {
-	return;
+const onDownloadProgress = function (track, progress) {
+	if (!track.trackSocket) {
+		return;
+	}
+
+	if (track.trackSocket.currentItem.type == "track") {
+		let complete;
+		if (!track.trackSocket.currentItem.percentage) {
+			track.trackSocket.currentItem.percentage = 0;
+		}
+		if (userSettings.read().hifi) {
+			complete = track.FILESIZE_FLAC;
+		} else {
+			if (track.FILESIZE_MP3_320) {
+				complete = track.FILESIZE_MP3_320;
+			} else if (track.FILESIZE_MP3_256) {
+				complete = track.FILESIZE_MP3_256;
+			} else {
+				complete = track.FILESIZE_MP3_128 || 0;
+			}
+		}
+
+		let percentage = (progress / complete) * 100;
+
+		if ((percentage - track.trackSocket.currentItem.percentage > 1) || (progress == complete)) {
+			track.trackSocket.currentItem.percentage = percentage;
+			track.trackSocket.emit("downloadProgress", {
+				queueId: track.trackSocket.currentItem.queueId,
+				percentage: track.trackSocket.currentItem.percentage
+			});
+		}
+	} else if (track.trackSocket.currentItem.type == "album") {
+		let numTracks = track.trackSocket.currentItem.size;
+		let downloaded = track.trackSocket.currentItem.downloaded;
+
+		let percentage = (downloaded / (numTracks)) * 100;
+		track.trackSocket.emit("downloadProgress", {
+			queueId: track.trackSocket.currentItem.queueId,
+			percentage: percentage
+		});
+	}
 }
 
 function getToken() {
@@ -366,7 +405,7 @@ function getJSONPromise(url) {
 			if(res.statusCode != 200 || !res.body) throw new Error('Unable to initialize Deezer API.')
 			var json = JSON.parse(res.body);
 			if (json.error) {
-				logger.error('Wrong id.', {error: json.error})
+				logger.error(`Wrong id. Message: ${json.error.message}. Code: ${json.error.code}.`)
 				throw new Error('Wrong id.')
 			}
 			resolve(json)

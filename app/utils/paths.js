@@ -31,6 +31,8 @@ const tmp = path.join(os.tmpdir(), 'deezloader-imgs')
 const defaultConfig = path.join(__dirname, '..', 'default.json')
 const d = new Date()
 const log = path.join(userData, 'logs', `${dateformat(new Date(), 'yyyy-mm-dd')}.txt`)
+const packageJson = path.join(__dirname, '..', 'package.json')
+console.log(packageJson)
 
 module.exports = {
   userData,
@@ -41,4 +43,5 @@ module.exports = {
   defaultDownload,
   tmp,
   log,
+  packageJson,
 }

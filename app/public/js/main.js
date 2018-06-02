@@ -1,11 +1,14 @@
+const { E } = remote.require('./utils/events')
+const mainApp = remote.require('./app')
+const path = remote.require('path')
 // Starting area, boot up the API and proceed to eat memory
 
 // Variables & constants
 const socket = io.connect(window.location.href);
 const startingChartCountry = 'UK';
-console.log(mainApp)
+
+
 if(typeof mainApp !== "undefined"){
-	console.log(mainApp.defaultSettings)
 	var defaultUserSettings = mainApp.defaultSettings;
 	var defaultDownloadLocation = mainApp.defaultDownloadDir;
 }
@@ -13,7 +16,7 @@ let userSettings = [];
 let Username = "";
 
 //Update alert
-socket.on("newupdate", function(ver, dllink){
+socket.on(E.BACK.NEWUPDATE, function(ver, dllink){
 	if(typeof shell != 'undefined'){
 		if (window.confirm("You are using an outdated version, the newest is "+ver+".\nClick OK to redirect to the download page or Cancel to close."))
 		{
@@ -26,8 +29,8 @@ socket.on("newupdate", function(ver, dllink){
 		};
 	}
 });
-socket.emit("autologin");
-socket.on("message", function(title, msg){
+socket.emit(E.FRONT.AUTOLOGIN);
+socket.on(E.BACK.MESSAGE, function(title, msg){
 	message(title, msg);
 });
 //Login button
@@ -39,18 +42,18 @@ $('#modal_login_btn_login').click(function () {
 	var autologin = $('#modal_login_input_autologin').prop("checked");
 	//Send to the software
 	Username = username;
-	socket.emit('login', username, password,autologin);
+	socket.emit(E.FRONT.LOGIN, username, password,autologin);
 });
 
-socket.on("autologin",function(username,password){
+socket.on(E.BACK.AUTOLOGIN,function(username,password){
 	$('#modal_login_btn_login').attr("disabled", true);
 	$('#modal_login_btn_login').html("Logging in...");
 	$('#modal_login_input_username').val(username);
 	Username = username;
 	$('#modal_login_input_password').val(password);
-	socket.emit('login', username, password,false);
+	socket.emit(E.FRONT.LOGIN, username, password,false);
 });
-socket.on("login", function (errmsg) {
+socket.on(E.BACK.LOGIN, function (errmsg) {
 	if (errmsg == "none") {
 		$("#modal_settings_username").html(Username);
 		$('#initializing').addClass('animated fadeOut').on('webkitAnimationEnd', function () {
@@ -59,11 +62,11 @@ socket.on("login", function (errmsg) {
 		});
 
 		// Load top charts list for countries
-		socket.emit("getChartsCountryList", {selected: startingChartCountry});
-		socket.emit("getChartsTrackListByCountry", {country: startingChartCountry});
+		socket.emit(E.FRONT.GETCHARTSCOUNTRYLIST, {selected: startingChartCountry});
+		socket.emit(E.FRONT.GETCHARTSTRACKLISTBYCOUNTRY, {country: startingChartCountry});
 
 		// Load my playlists
-		socket.emit('my_playlists');
+		socket.emit(E.FRONT.MYPLAYLISTS);
 	}
 	else{
 			$('#login-res-text').text(errmsg);
@@ -101,8 +104,8 @@ $(document).ready(function () {
 });
 
 // Load settings
-socket.emit("getUserSettings");
-socket.on('getUserSettings', function (data) {
+socket.emit(E.FRONT.GETUSERSETTINGS);
+socket.on(E.BACK.GETUSERSETTINGS, function (data) {
 	userSettings = data.settings;
 	console.log('Settings refreshed');
 });
@@ -195,8 +198,8 @@ $('#modal_settings_btn_saveSettings').click(function () {
 	};
 
 	// Send updated settings to be saved into config file
-	socket.emit('saveSettings', userSettings);
-	socket.emit("getUserSettings");
+	socket.emit(E.FRONT.SAVESETTINGS, userSettings);
+	socket.emit(E.FRONT.GETUSERSETTINGS);
 	var webview = document.querySelector('#playlists_converter_webview')
 	webview.loadURL('https://www.mooval.de/')
 });
@@ -223,7 +226,7 @@ $('#modal_settings_btn_logout').click(function () {
 			$(this).removeClass('animated fadeIn');
 			$(this).css('display', '');
 		});
-		socket.emit('logout');
+		socket.emit(E.FRONT.LOGOUT);
 		$('#modal_login_input_username').val("");
 		$('#modal_login_input_password').val("");
 		$('#modal_login_input_autologin').prop("checked",false);
@@ -252,7 +255,7 @@ function fillSettingsModal(settings) {
 
 
 //******************************************* UPDATE VERSION ************************************************* */
-socket.on('version', (v) => {
+socket.on(E.BACK.VERSION, (v) => {
 	$('.version').html(v)
 });
 
@@ -274,10 +277,10 @@ function message(title, message) {
 //###############################################TAB_PLAYLISTS##############################################\\
 
 $('#myPlaylistsRefresh').on('click', function () {
-	socket.emit('my_playlists');
+	socket.emit(E.FRONT.MYPLAYLISTS);
 });
 
-socket.on('my_playlists', function (playlists) {
+socket.on(E.BACK.MYPLAYLISTS, function (playlists) {
 	showResults_table_playlist(playlists, 'my_playlists');
 });
 
@@ -327,11 +330,11 @@ $('#tab_search_form_search').submit(function (ev) {
 	$('#tab_search_table_results_tbody_loadingIndicator').removeClass('hide');
 
 
-	socket.emit("search", {type: mode, text: searchString});
+	socket.emit(E.FRONT.SEARCH, {type: mode, text: searchString});
 
 });
 
-socket.on('search', function (data) {
+socket.on(E.BACK.SEARCH, function (data) {
 
 	$('#tab_search_table_results_tbody_loadingIndicator').addClass('hide');
 
@@ -520,7 +523,7 @@ function showTrackListSelective(link) {
 
 	$('#modal_trackListSelective').modal('open');
 
-	socket.emit('getTrackList', {id: getIDFromLink(link), type: getTypeFromLink(link)});
+	socket.emit(E.FRONT.GETTRACKLIST, {id: getIDFromLink(link), type: getTypeFromLink(link)});
 }
 
 $('#download_track_selection').click(function(e){
@@ -545,10 +548,10 @@ function showTrackList(link) {
 
 	$('#modal_trackList').modal('open');
 
-	socket.emit("getTrackList", {id: getIDFromLink(link), type: getTypeFromLink(link)});
+	socket.emit(E.FRONT.GETTRACKLIST, {id: getIDFromLink(link), type: getTypeFromLink(link)});
 
 }
-socket.on("getTrackList", function (data) {
+socket.on(E.BACK.GETTRACKLIST, function (data) {
 	//data.err			-> undefined/err
 	//data.id			 -> passed id
 	//data.response -> API response
@@ -681,7 +684,7 @@ socket.on("getTrackList", function (data) {
 });
 
 //#############################################TAB_CHARTS#############################################\\
-socket.on("getChartsCountryList", function (data) {
+socket.on(E.BACK.GETCHARTSCOUNTRYLIST, function (data) {
 	//data.countries		-> Array
 	//data.countries[0].country -> String (country name)
 	//data.countries[0].picture_small/picture_medium/picture_big -> url to cover
@@ -702,11 +705,11 @@ $('#tab_charts_select_country').on('change', function () {
 	$('#tab_charts_table_charts_tbody_charts').addClass('hide');
 	$('#tab_charts_table_charts_tbody_loadingIndicator').removeClass('hide');
 
-	socket.emit("getChartsTrackListByCountry", {country: country});
+	socket.emit(E.FRONT.GETCHARTSTRACKLISTBYCOUNTRY, {country: country});
 
 });
 
-socket.on("getChartsTrackListByCountry", function (data) {
+socket.on(E.BACK.GETCHARTSTRACKLISTBYCOUNTRY, function (data) {
 	//data.playlist		-> Object with Playlist information
 	//data.tracks			-> Array
 	//data.tracks[0]	 -> Object of track 0
@@ -766,10 +769,24 @@ function addToQueue(url) {
 		return false;
 	}
 
-	socket.emit("download" + type, {id: id, settings: userSettings});
+	switch(type) {
+		case 'track':
+			socket.emit(E.FRONT.DOWNLOADTRACK, { id: id, settings: userSettings })
+			break
+		case 'playlist':
+			socket.emit(E.FRONT.DOWNLOADPLAYLIST, { id: id, settings: userSettings })
+			break
+		case 'album':
+			socket.emit(E.FRONT.DOWNLOADALBUM, { id: id, settings: userSettings })
+			break
+		case 'artist':
+			socket.emit(E.FRONT.DOWNLOADARTIST, { id: id, settings: userSettings })
+			break
+		default:
+			break
+	}
 
 	Materialize.toast('<i class="material-icons">add</i>Added to download-queue', 5000, 'rounded');
-
 }
 
 function alreadyInQueue(id) {
@@ -790,7 +807,7 @@ function alreadyInQueue(id) {
 
 }
 
-socket.on('addToQueue', function (data) {
+socket.on(E.BACK.ADDTOQUEUE, function (data) {
 
 	var tableBody = $('#tab_downloads_table_downloads').find('tbody');
 
@@ -809,7 +826,7 @@ socket.on('addToQueue', function (data) {
 
 		ev.preventDefault();
 
-		socket.emit("cancelDownload", {queueId: data.queueId});
+		socket.emit(E.FRONT.CANCELDOWNLOAD, {queueId: data.queueId});
 
 	});
 
@@ -817,7 +834,7 @@ socket.on('addToQueue', function (data) {
 
 });
 
-socket.on("downloadStarted", function (data) {
+socket.on(E.BACK.DOWNLOADSTARTED, function (data) {
 	//data.queueId -> queueId of started download
 
 	//Switch progress type indeterminate to determinate
@@ -826,7 +843,7 @@ socket.on("downloadStarted", function (data) {
 
 });
 
-socket.on('updateQueue', function (data) {
+socket.on(E.BACK.UPDATEQUEUE, function (data) {
 
 	if (data.cancelFlag) {
 		return;
@@ -847,7 +864,7 @@ socket.on('updateQueue', function (data) {
 
 });
 
-socket.on("downloadProgress", function (data) {
+socket.on(E.BACK.DOWNLOADPROGRESS, function (data) {
 	//data.queueId -> id (string)
 	//data.percentage -> float/double, percentage
 	//updated in 1% steps
@@ -856,13 +873,13 @@ socket.on("downloadProgress", function (data) {
 
 });
 
-socket.on("emptyDownloadQueue", function () {
+socket.on(E.BACK.EMPTYDOWNLOADQUEUE, function () {
 
 	Materialize.toast('<i class="material-icons">done_all</i>All downloads completed!', 5000, 'rounded');
 
 });
 
-socket.on("cancelDownload", function (data) {
+socket.on(E.BACK.CANCELDOWNLOAD, function (data) {
 	//data.queueId		-> queueId of item which was canceled
 	$('#' + data.queueId).addClass('animated fadeOutRight').on('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
 		$(this).remove();
@@ -901,6 +918,8 @@ function getTypeFromLink(link) {
 		type = "album";
 	} else if (link.indexOf('artist')) {
 		type = "artist";
+	} else {
+		type = 'track'
 	}
 
 	return type;
@@ -952,7 +971,7 @@ $('#tab_playlists_converter_link').on('click', function() {
 
 // DONATE MODAL
 
-socket.on('donation', () => {
+socket.on(E.BACK.DONATION, () => {
 	donation()
 })
 
