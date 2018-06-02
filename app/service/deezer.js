@@ -33,32 +33,17 @@ class Deezer {
 	init(username, password) {
 		 return init(username, password)
 	}
-	getMyPlaylists(callback) {
-		return getMyPlaylists(callback)
+	getMyPlaylists() {
+		return getMyPlaylists()
 	}
-	getPlaylist(id, callback) {
-		return getPlaylist(id, callback)
-	}
-	getPlaylistSize(id, callback) {
-		return getPlaylistSize(id, callback)
-	}
-	getPlaylistTracks(id, callback) {
-		return getPlaylistTracks(id, callback)
-	}
-	getPlaylistTracksAdv(id, callback) {
-		return getPlaylistTracksAdv(id, callback)
+	getPlaylist(id) {
+		return getPlaylist(id)
 	}
 	getAlbum(id, callback) {
 		return getAlbum(id, callback)
 	}
-	getAlbumSize(id, callback) {
-		return getAlbumSize(id, callback)
-	}
-	getAlbumTracks(id, callback) {
-		return getAlbumTracks(id, callback)
-	}
-	getAlbumTracksAdv(id, callback) {
-		return getAlbumTracksAdv(id, callback)
+	getAlbumPromise(id) {
+		return getAlbumPromise(id)
 	}
 	getArtist(id, callback) {
 		return getArtist(id, callback)
@@ -150,12 +135,10 @@ const getToken = () => {
 				const regex = new RegExp(/"api_key":"([^",]*)/g)
 				const _token = regex.exec(res.body)
 				if (!(_token instanceof Array) || !_token[1]) throw new Error('Invalid token.')
-				console.log(_token[1])
 				deezer.apiQueries.api_token = _token[1]
 				logger.info(`New token API fetched from Deezer.`)
 				const userRegex = new RegExp(/{"USER_ID":"([^",]*)/g)
 				const userId = userRegex.exec(res.body)[1]
-				console.log(userId)
 				deezer.userId = userId
 				return resolve()
 			})
@@ -163,58 +146,12 @@ const getToken = () => {
 	})
 }
 
-// GET USER PLAYLISTS
-const getMyPlaylists = function(callback) {
-	getJSON(`https://api.deezer.com/user/${deezer.userId}/playlists`, function(res){
-		if (!(res instanceof Error)){
-			callback(res);
-		} else {
-			callback(null, res)
-		}
-	})
-}
-// END GET USER PLAYLISTS
-
-const getPlaylist = function(id, callback) {
-	getJSON(`https://api.deezer.com/playlist/${id}`, function(res){
-		if (!(res instanceof Error)){
-			callback(res);
-		} else {
-			callback(null, res)
-		}
-	});
-
+const getMyPlaylists = function() {
+	return getJSONPromise(`https://api.deezer.com/user/${deezer.userId}/playlists?limit=-1`)
 }
 
-const getPlaylistSize = function(id, callback) {
-	getJSON(`https://api.deezer.com/playlist/${id}` + '/tracks?limit=1', function(res){
-		if (!(res instanceof Error)){
-			callback(res.total);
-		} else {
-			callback(null, res)
-		}
-	});
-
-}
-
-const getPlaylistTracks = function(id, callback) {
-	getJSON(`https://api.deezer.com/playlist/${id}` + '/tracks?limit=-1', function(res){
-		if (!(res instanceof Error)){
-			callback(res)
-		} else {
-			callback(null, res)
-		}
-	});
-}
-
-const getPlaylistTracksAdv = function(id, callback) {
-	request.post({url: deezer.apiUrl, headers: deezer.httpHeaders, qs: Object.assign({method:'deezer.pagePlaylist'},deezer.apiQueries), body: {playlist_id:id.toString(),lang:'en',nb:100000,start:0,tab:0,tags:true,header:true}, json: true, jar: true}, function(err, res, body) {
-		if (!err && res.statusCode == 200){
-			callback(body.results['SONGS']);
-		} else {
-			callback(null, res)
-		}
-	});
+const getPlaylist = function(id) {
+	return getJSONPromise(`https://api.deezer.com/playlist/${id}?limit=-1`)
 }
 
 const getAlbum = function(id, callback) {
@@ -227,37 +164,8 @@ const getAlbum = function(id, callback) {
 	});
 }
 
-const getAlbumSize = function(id, callback) {
-	getJSON(`https://api.deezer.com/album/${id}` + '/tracks?limit=1', function(res){
-		if (!(res instanceof Error)){
-			callback(res.total);
-		} else {
-			callback(null, res)
-		}
-	});
-
-}
-
-const getAlbumTracks = function(id, callback) {
-	getJSON(`https://api.deezer.com/album/${id}` + '/tracks?limit=-1', function(res){
-		if (!(res instanceof Error)){
-			callback(res);
-		} else {
-			callback(null, res)
-		}
-
-	});
-
-}
-
-const getAlbumTracksAdv = function(id, callback) {
-	request.post({url: deezer.apiUrl, headers: deezer.httpHeaders, qs: Object.assign({method:'deezer.pageAlbum'},deezer.apiQueries), body: {alb_id:id,lang:'en',tab:0}, json: true, jar: true}, function(err, res, body) {
-		if (!err && res.statusCode == 200){
-			callback(body.results['SONGS']);
-		} else {
-			callback(null, res)
-		}
-	});
+const getAlbumPromise = function(id) {
+	return getJSONPromise(`https://api.deezer.com/album/${id}?limit=-1`)
 }
 
 const getArtist = function(id, callback) {
@@ -268,7 +176,6 @@ const getArtist = function(id, callback) {
 			callback(null, res)
 		}
 	});
-
 }
 
 const getArtistAlbums = function(id, callback) {
@@ -556,6 +463,26 @@ function getJSON(url, callback){
 			callback(json);
 		}
 	});
+}
+
+function getJSONPromise(url) {
+	return new Promise((resolve, reject) => {
+			request.get({
+				url: url,
+				headers: deezer.httpHeaders,
+				jar: true
+			})
+		.then(res => {
+			if(res.statusCode != 200 || !res.body) throw new Error('Unable to initialize Deezer API.')
+			var json = JSON.parse(res.body);
+			if (json.error) {
+				logger.error('Wrong id.', {error: json.error})
+				throw new Error('Wrong id.')
+			}
+			resolve(json)
+		})
+		.catch(e => reject(e))
+	})
 }
 
 module.exports = deezer
