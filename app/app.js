@@ -19,6 +19,7 @@ const https = require('https')
 const mflac = require('flac-metadata')
 const fs = require('fs-extra')
 const async = require('async')
+/** @type{*} */
 const request = require('requestretry').defaults({
 	maxAttempts: 2147483647,
 	retryDelay: 1000,
@@ -28,13 +29,9 @@ const os = require('os')
 const ID3Writer = require('./lib/browser-id3-writer')
 const Deezer = require('./deezer-api')
 const path = require('path')
-const {
-	settings,
-	autologinLocation,
-	downloadDir,
-	coverArt,
-	packageJson,
-} = require('./service/config')
+const packageJson = require('./package.json')
+const { settings, userSettings } = require('./service/config')
+const paths = require('./utils/paths')
 const logger = require('./service/logger')
 const updater = require('./service/updater')
 const encryptor = require('./service/encryptor')
@@ -52,6 +49,7 @@ server.onConnection((socket) => {
 			}
 	})
 
+	// LOGIN EVENTS
 	socket.on('login', (username, password, autoLoginChecked) => {
 		login.login(socket, username, password, autoLoginChecked)
 	})
@@ -68,7 +66,7 @@ server.onConnection((socket) => {
 			if (!track.trackSocket.currentItem.percentage) {
 				track.trackSocket.currentItem.percentage = 0;
 			}
-			if (settings.user().hifi) {
+			if (userSettings.read().hifi) {
 				complete = track.FILESIZE_FLAC;
 			} else {
 				if (track.FILESIZE_MP3_320) {
@@ -609,16 +607,13 @@ server.onConnection((socket) => {
 	});
 
 	socket.on("getUserSettings", function () {
-		let set = settings.user()
-		if (!set.downloadLocation) {
-			set.downloadLocation = downloadDir
-		}
+		let set = userSettings.read()
 		socket.emit('getUserSettings', {
 			settings: set
 		})
 	})
 
-	socket.on("saveSettings", settings.update)
+	socket.on("saveSettings", userSettings.update)
 
 	function downloadTrack(id, options, altmetadata, callback) {
 		logger.info('Getting track data.')
@@ -730,7 +725,22 @@ server.onConnection((socket) => {
 							length: track["DURATION"],
 							BARCODE: ajson.upc,
 							explicit: track["EXPLICIT_LYRICS"],
-							rtype: ajson.record_type
+							rtype: ajson.record_type,
+							copyright: undefined,
+							mixer: undefined,
+							composer: undefined,
+							producer: undefined,
+							writer: undefined,
+							author: undefined,
+							engineer: undefined,
+							publisher: undefined,
+							unsynchronisedLyrics: undefined,
+							bpm: undefined,
+							trackgain: undefined,
+							genre: undefined,
+							image: undefined,
+							date: undefined,
+							year: undefined,
 						};
 						if (track["COPYRIGHT"]) {
 							metadata.copyright = track["COPYRIGHT"];
@@ -762,7 +772,7 @@ server.onConnection((socket) => {
 						if (publishertag) {
 							metadata.publisher = publishertag;
 						}
-						if (options.plName && !(options.createArtistFolder || options.createAlbumFolder) && !settings.user().numplaylistbyalbum) {
+						if (options.plName && !(options.createArtistFolder || options.createAlbumFolder) && !userSettings.read().numplaylistbyalbum) {
 							metadata.trackNumber = (parseInt(options.playlist.position) + 1).toString() + "/" + options.playlist.fullSize;
 							metadata.partOfSet = "1/1";
 						}
@@ -796,7 +806,7 @@ server.onConnection((socket) => {
 						filename = fixName(settingsRegex(metadata, options.filename, options.playlist));
 					}
 
-					let filepath = downloadDir;
+					let filepath = userSettings.read().downloadLocation + path.sep;
 					if (options.createArtistFolder || options.createAlbumFolder) {
 						if (options.plName) {
 							filepath += antiDot(fixName(options.plName)) + path.sep;
@@ -828,7 +838,7 @@ server.onConnection((socket) => {
 					} else {
 						writePath = filepath + filename + '.mp3';
 					}
-					if (track["LYRICS_SYNC_JSON"] && settings.user().syncedlyrics) {
+					if (track["LYRICS_SYNC_JSON"] && userSettings.read().syncedlyrics) {
 						var lyricsbuffer = "";
 						for (var i = 0; i < track["LYRICS_SYNC_JSON"].length; i++) {
 							if (track["LYRICS_SYNC_JSON"][i].lrc_timestamp) {
@@ -855,11 +865,11 @@ server.onConnection((socket) => {
 						let imgPath;
 						//If its not from an album but a playlist.
 						if (!options.tagPosition && !options.createAlbumFolder) {
-							imgPath = coverArt.path() + fixName(metadata.ISRC) + ".jpg";
+							imgPath = paths.tmp + fixName(metadata.ISRC) + ".jpg";
 						} else {
 							imgPath = filepath + "folder.jpg";
 						}
-						if (fs.existsSync(imgPath) && !imgPath.includes(coverArt.path())) {
+						if (fs.existsSync(imgPath) && !imgPath.includes(paths.tmp)) {
 							metadata.imagePath = (imgPath).replace(/\\/g, "/");
 							logger.info(`Starting the download process CODE:1.`)
 							condownload();
@@ -991,6 +1001,7 @@ server.onConnection((socket) => {
 								}
 								const reader = fs.createReadStream(tempPath);
 								const writer = fs.createWriteStream(writePath);
+								/** @type{*} */
 								let processor = new mflac.Processor({
 									parseMetaDataBlocks: true
 								});
@@ -1012,15 +1023,15 @@ server.onConnection((socket) => {
 
 									if (mdb.isLast) {
 										var res = 0;
-										if (settings.user().artworkSize.includes("1400")) {
+										if (userSettings.read().artworkSize.includes("1400")) {
 											res = 1400;
-										} else if (settings.user().artworkSize.includes("1200")) {
+										} else if (userSettings.read().artworkSize.includes("1200")) {
 											res = 1200;
-										} else if (settings.user().artworkSize.includes("1000")) {
+										} else if (userSettings.read().artworkSize.includes("1000")) {
 											res = 1000;
-										} else if (settings.user().artworkSize.includes("800")) {
+										} else if (userSettings.read().artworkSize.includes("800")) {
 											res = 800;
-										} else if (settings.user().artworkSize.includes("500")) {
+										} else if (userSettings.read().artworkSize.includes("500")) {
 											res = 500;
 										}
 										if (cover) {
@@ -1051,6 +1062,7 @@ server.onConnection((socket) => {
 								reader.pipe(processor).pipe(writer);
 							} else {
 								const songBuffer = fs.readFileSync(tempPath);
+								/** @type{*} */
 								const writer = new ID3Writer(songBuffer);
 								writer.setFrame('TIT2', metadata.title)
 									.setFrame('TPE1', [metadata.artist])
@@ -1160,7 +1172,7 @@ function settingsRegex(metadata, filename, playlist) {
 	filename = filename.replace(/%artist%/g, metadata.artist);
 	filename = filename.replace(/%year%/g, metadata.year);
 	if (typeof metadata.trackNumber != 'undefined') {
-		if (settings.user().padtrck) {
+		if (userSettings.read().padtrck) {
 			 filename = filename.replace(/%number%/g, pad(splitNumber(metadata.trackNumber, false), splitNumber(metadata.trackNumber, true)));
 		} else {
 			filename = filename.replace(/%number%/g, splitNumber(metadata.trackNumber, false));
@@ -1199,38 +1211,25 @@ function pad(str, max) {
 
 /**
  * Splits the %number%
- * @param string str
+ * @param {string} str
  * @return string
  */
 function splitNumber(str, total) {
+	console.log(`Str: ${str}. Total: ${total}`)
 	str = str.toString();
 	var i = str.indexOf("/");
 	if (total && i > 0) {
+		console.log(`Return ${str.slice(i + 1, str.length)}`)
 		return str.slice(i + 1, str.length);
 	} else if (i > 0) {
+		console.log(`Return ${str.slice(0, i)}`)
 		return str.slice(0, i);
 	} else {
+		console.log(`Return ${str}`)
 		return str;
 	}
+	console.log(`Return: ${i > 0 ? str.slice(0, i) : str}`)
 	return i > 0 ? str.slice(0, i) : str;
-}
-
-/**
- * An interval that stops after a number of repetitions
- * @param success
- * @param delay
- * @param repetitions
- */
-function magicInterval(success, delay, repetitions) {
-	let x = 0;
-	let intervalID = setInterval(function () {
-
-		success(intervalID);
-
-		if (++x === repetitions) {
-			clearInterval(intervalID);
-		}
-	}, delay);
 }
 
 // Show crash error in console for debugging
@@ -1239,6 +1238,6 @@ process.on('uncaughtException', function (err) {
 });
 
 // Exporting vars
-// module.exports.mainFolder = mainFolder;
-module.exports.defaultSettings = settings.user();
-module.exports.defaultDownloadDir = settings.user().defaultDownloadDir;
+// module.exports.mainFolder = mainFolder
+module.exports.defaultSettings = userSettings.read()
+module.exports.defaultDownloadDir = paths.defaultDownload

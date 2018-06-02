@@ -5,7 +5,10 @@ const Deezer = require('../deezer-api')
 const logger = require('./logger')
 const config = require('./config')
 const encryptor = require('./encryptor')
+const paths = require('../utils/paths')
 const { socket } = require('../server')
+const message = require('./message')
+/** @type{*} */
 const request = require('requestretry').defaults({
 	maxAttempts: 2147483647,
 	retryDelay: 1000,
@@ -22,21 +25,20 @@ const login = (socket, username, password, autoLoginChecked) => {
     } else {
       if (autoLoginChecked) {
         let data = `${username}:${password}`
-        config.autoLogin.save(encryptor.encrypt(data))
+        save(encryptor.encrypt(data))
       }
-      socket.emit("login", "none")
+      socket.emit('login', 'none')
       logger.info('Logged in successfully')
-      config.settings.incrementOpens()
-      if (config.settings.shouldOpen()) {
+      if (message.shouldOpen()) {
         socket.emit('donation')
-        request.get("https://pastebin.com/raw/a6qqEMdm", function (error, response, body) {})
+        request.get('https://pastebin.com/raw/a6qqEMdm', function (error, response, body) {})
       }
     }
   })
 }
 
 const autoLogin = (socket) => {
-  let data = config.autoLogin.load()
+  let data = load()
   if (!data) {
     return
   }
@@ -46,14 +48,33 @@ const autoLogin = (socket) => {
     socket.emit("autologin", userAndPassword[0], userAndPassword[1])
   } catch (e) {
     logger.warn('Invalid autologin file. Deleting it.')
-    config.autoLogin.delete()
+    remove()
     return
   }
 }
 
 const logout = () => {
   logger.info('Logged out.')
-  config.autoLogin.delete()
+  remove()
+}
+
+const save = (data) => {
+  fs.outputFileSync(paths.autoLogin, data)
+  logger.info('Autologin saved.')
+}
+
+const load = () => {
+  if (!fs.existsSync(paths.autoLogin)) {
+    logger.info('Autologin not found.')
+    return ''
+  }
+  let data = fs.readFileSync(paths.autoLogin).toString('utf8')
+  logger.info('Loaded auto login.')
+  return data
+}
+
+const remove = () => {
+  fs.unlink(paths.autoLogin, function () {})
 }
 
 module.exports = {

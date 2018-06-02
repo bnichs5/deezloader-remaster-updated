@@ -174,10 +174,10 @@ $('#nav_btn_openSettingsModal').click(function () {
 
 // Save settings button
 $('#modal_settings_btn_saveSettings').click(function () {
-	let settings = {};
+	let userSettings = {};
 
 	// Save
-	settings.userDefined = {
+	userSettings = {
 		convertTo: $('#convert_to').val(),
 		convertFrom: $('#convert_from').val(),
 		trackNameTemplate: $('#modal_settings_input_trackNameTemplate').val(),
@@ -195,7 +195,7 @@ $('#modal_settings_btn_saveSettings').click(function () {
 	};
 
 	// Send updated settings to be saved into config file
-	socket.emit('saveSettings', settings);
+	socket.emit('saveSettings', userSettings);
 	socket.emit("getUserSettings");
 	var webview = document.querySelector('#playlists_converter_webview')
 	webview.loadURL('https://www.mooval.de/')

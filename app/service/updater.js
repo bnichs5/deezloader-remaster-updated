@@ -1,7 +1,7 @@
 // @ts-check
 
 const logger = require('./logger')
-const currentVersion = require('./config').packageJson.version
+const currentVersion = require('../package.json').version
 const request = require('requestretry').defaults({
   maxAttempts: 3,
   retryDelay: 500,

@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const fs = require("fs-extra");
 const path = require('path');
 const https = require('https');
-const { settings } = require('./service/config')
+const { settings, userSettings } = require('./service/config')
 const logger = require('./service/logger')
 
 module.exports = new Deezer();
@@ -240,7 +240,7 @@ Deezer.prototype.getTrack = function(id, callback) {
 							var id = json["SNG_ID"];
 							var md5Origin = json["MD5_ORIGIN"];
 							var format;
-							if(settings.user.hifi && json["FILESIZE_FLAC"] > 0){
+							if(userSettings.read().hifi && json["FILESIZE_FLAC"] > 0){
 								format = 9;
 							}else{
 								format = 3;
@@ -285,7 +285,7 @@ Deezer.prototype.getTrack = function(id, callback) {
 			var id = json["SNG_ID"];
 			var md5Origin = json["MD5_ORIGIN"];
 			var format;
-			if(settings.user.hifi && json["FILESIZE_FLAC"] > 0){
+			if(userSettings.read().hifi && json["FILESIZE_FLAC"] > 0){
 				format = 9;
 			}else{
 				format = 3;

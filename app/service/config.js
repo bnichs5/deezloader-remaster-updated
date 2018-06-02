@@ -1,183 +1,108 @@
 // @ts-check
 
 const logger = require('./logger')
-const os = require('os')
 const path = require('path')
 const fs = require('fs-extra')
+const paths = require('../utils/paths')
 
-const packageJson = require('../package.json')
-const defaultConfigPath = path.join(__dirname, '..', 'default.json')
-const defaultConfig = fs.readJSONSync(defaultConfigPath)
-let userdata = ''
-let homedata = os.homedir()
-let configFilePath = ''
 let configFile = {}
-let autoLoginPath = ''
-let defaultDownloadDir = ''
 let downloadDir = ''
-let coverArtFolder = ''
+
+const resetTmpDir = () => {
+  fs.removeSync(paths.tmp);
+  fs.ensureDirSync(paths.tmp);
+}
 
 const loadDefaultConfig = () => {
-  fs.outputJSONSync(configFilePath, defaultConfig, {
+  const defaultConfig = fs.readJSONSync(paths.defaultConfig)
+  defaultConfig.userDefined.downloadLocation = paths.defaultDownload
+  fs.outputJSONSync(paths.config, defaultConfig, {
     spaces: '  '
   })
 }
+
+const ensureDownloadDir = () => {
+  if (!fs.existsSync(configFile.userDefined.downloadLocation)) {
+    configFile.userDefined.downloadLocation = paths.defaultDownload
+  }
+}
+
+const saveConfig = () => {
+  fs.outputJSONSync(paths.config, configFile, {
+    spaces: '  '
+  })
+  downloadDir = getDownloadDir()
+  logger.info('Settings saved.')
+}
+
 let settings = {
-  save: () => {
-    fs.outputJSONSync(configFilePath, configFile, {
-      spaces: '  '
-    })
-    downloadDir = getDownloadDir()
-    logger.info('Settings saved.')
+  opens: {
+    increment: () => {
+      configFile.opens++
+      saveConfig()
+    },
+    read: () => configFile.opens
   },
-  update: (newUserSettings) => {
-    let userSettings = newUserSettings
-    if (userSettings.downloadLocation == defaultDownloadDir) {
-      userSettings.downloadLocation = null;
-    } else {
-      userSettings.downloadLocation =
-        path.resolve(userSettings.downloadLocation + path.sep) + path.sep;
-      downloadDir = userSettings.downloadLocation;
-    }
-    configFile.userDefined = userSettings
-    downloadDir = getDownloadDir()
-    settings.save()
-    logger.info('Settings updated.')
-  },
-  incrementOpens: () => {
-    configFile.opens++
-    settings.save()
-  },
-  shouldOpen: () => {
-    if (configFile.opens === 3) {
-      return true
-    }
-    if (configFile.opens % 10 == 0) {
-      return true
-    }
-    return false
-  },
-  user: () => {
-    return configFile.userDefined
-  },
-  serverPort: () => {
-    return configFile.serverPort
-  },
-  opens: () => {
-    return configFile.opens
-  },
+  serverPort: () => configFile.serverPort,
 }
 
-const autoLogin = {
-  save: (data) => {
-    fs.outputFileSync(autoLoginPath, data)
-    logger.info('Autologin saved.')
+const userSettings = {
+  update: (newSettings) => {
+    configFile.userDefined = newSettings
+    ensureDownloadDir()
+    downloadDir = getDownloadDir()
+    saveConfig()
+    logger.info('User settings updated.')
   },
-  load: () => {
-    if (!fs.existsSync(autoLoginPath)) {
-      logger.info('Autologin not found.')
-      return ''
-    }
-    let data = fs.readFileSync(autoLoginPath).toString('utf8')
-    logger.info('Loaded auto login.')
-    return data
-  },
-  delete: () => {
-    fs.unlink(autoLoginPath, function () {})
-  }
+  read: () => configFile.userDefined,
 }
 
-const coverArt = {
-  reset: () => {
-    fs.removeSync(coverArtFolder);
-    fs.ensureDirSync(coverArtFolder);
-  },
-  path: () => {
-    return coverArtFolder
-  }
-}
 
 const getDownloadDir = () => {
-  let dir = defaultDownloadDir
-  if (configFile.userDefined.downloadLocation != null) {
-    dir = configFile.userDefined.downloadLocation
-  }
-  if (!fs.existsSync(dir)) {
-    dir = defaultDownloadDir;
-    configFile.userDefined.downloadLocation = dir
-    fs.ensureDirSync(dir)
-    settings.save()
-  }
-  return dir
+  ensureDownloadDir()
+  return configFile.userDefined.downloadLocation
 }
-
-switch (process.platform) {
-  case 'win32':
-    userdata = path.join(process.env.APPDATA, 'Deezloader')
-    break
-  case 'darwin':
-    userdata = path.join(homedata, 'Library', 'Application Support', 'Deezloader')
-    break
-  case 'android':
-    homedata = path.join(homedata, 'storage', 'shared')
-    userdata = path.join(homedata, 'Deezloader')
-    break
-  default:
-    userdata = path.join(homedata, '.config', 'Deezloader')
-    break
-}
-
-configFilePath = path.join(userdata, 'config.json')
-if (!fs.existsSync(configFilePath)) {
-  loadDefaultConfig()
-}
-configFile = fs.readJSONSync(configFilePath)
-autoLoginPath = path.join(userdata, 'autologin')
-defaultDownloadDir = path.join(homedata, 'Music', 'Deezloader')
-downloadDir = getDownloadDir()
-coverArtFolder = path.join(os.tmpdir(), 'deezloader-imgs')
 
 const configIsOk = () => {
-  if (typeof configFile.userDefined.numplaylistbyalbum != "boolean") {
-    logger.warn('numplaylistbyalbum is not a boolean in configuration. ' +
-      `Current value: ${configFile.userDefined.numplaylistbyalbum}`, {})
-    return false
+  if (!fs.existsSync(paths.config)) {
+    loadDefaultConfig()
   }
-  if (typeof configFile.userDefined.syncedlyrics != "boolean") {
-    logger.warn('syncedlyrics is not a boolean in configuration. ' +
-      `Current value: ${configFile.userDefined.syncedlyrics}`, {})
-    return false
+  configFile = fs.readJSONSync(paths.config)
+  const errors = []
+  const user = configFile.userDefined
+  if (typeof user.numplaylistbyalbum != 'boolean') {
+    errors.push({key: 'numplaylistbyalbum', type: 'boolean'})
   }
-  if (typeof configFile.userDefined.padtrck != "boolean") {
-    logger.warn('padtrck is not a boolean in configuration. ' +
-      `Current value: ${configFile.userDefined.padtrck}`, {})
-    return false
+  if (typeof user.syncedlyrics != 'boolean') {
+    errors.push({key: 'syncedlyrics', type: 'boolean'})
   }
-  if (typeof configFile.userDefined.albumNameTemplate != "string") {
-    logger.warn('albumNameTemplate is not a boolean in configuration. ' +
-      `Current value: ${configFile.userDefined.albumNameTemplate}`, {})
-    return false
+  if (typeof user.padtrck != 'boolean') {
+    errors.push({key: 'padtrck', type: 'boolean'})
   }
-  if (typeof configFile.opens != "number") {
+  if (typeof user.albumNameTemplate != 'string') {
+    errors.push({key: 'albumNameTemplate', type: 'string'})
+  }
+  if (typeof configFile.opens != 'number') {
     logger.warn(`opens is not a number. Current value ${configFile.opens}`)
-    return false
+    errors.push({key: 'opens', type: 'number'})
   }
-  return true
+  if (errors.length === 0) {
+    return true
+  }
+  errors.forEach(e => {
+    logger.warn(`${e.key} is not a ${e.type}.`)
+  })
 }
 
 if (!configIsOk()) {
   logger.info('Some configuration was wrong. Setting configuration to defaults.')
   loadDefaultConfig()
-  configFile = fs.readJSONSync(configFilePath)
+  configFile = fs.readJSONSync(paths.config)
 }
 
-coverArt.reset()
+resetTmpDir()
 
 module.exports = {
+  userSettings,
   settings,
-  autoLogin,
-  coverArt,
-  packageJson,
-  downloadDir,
-  userdata,
 }

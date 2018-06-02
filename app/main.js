@@ -1,11 +1,11 @@
 // @ts-check
 
-// Load settings before everything
 const path = require('path');
 const electron = require('electron');
 const os = require('os');
 const app = electron.app;
 const { settings } = require('./service/config')
+const logger = require('./service/logger')
 
 const socketStarter = require('./server')
 const BrowserWindow = electron.BrowserWindow;
@@ -57,7 +57,10 @@ function createWindow () {
 	});
 }
 
-app.on('ready', createWindow);
+app.on('ready', () => {
+	logger.info('Application ready. Creating window.')
+	createWindow()
+});
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
