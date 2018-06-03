@@ -1,5 +1,3 @@
-const url = require('url')
-
 class Artist {
 
   /**
@@ -23,44 +21,45 @@ class Artist {
     const opt = options || {}
     this.id = opt.id
     this.name = opt.name
-    this.link = opt.link ? new url.URL(opt.link) : null
-    this.share = opt.share ? new url.URL(opt.share) : null
-    this.picture = opt.picture ? new url.URL(opt.picture) : null
-    this.picture_small = opt.picture_small ? new url.URL(opt.picture_small) : null
-    this.picture_medium = opt.picture_medium ? new url.URL(opt.picture_medium) : null
-    this.picture_big = opt.picture_big ? new url.URL(opt.picture_big) : null
-    this.picture_xl = opt.picture_xl ? new url.URL(opt.picture_xl) : null
+    this.link = opt.link
+    this.share = opt.share
+    this.picture = opt.picture
+    this.picture_small = opt.picture_small
+    this.picture_medium = opt.picture_medium
+    this.picture_big = opt.picture_big
+    this.picture_xl = opt.picture_xl
     this.nb_album = opt.nb_album
     this.nb_fan = opt.nb_fan
     this.radio = opt.radio
-    this.tracklist = opt.tracklist ? new url.URL(opt.tracklist) : null
+    this.tracklist = opt.tracklist
   }
 
   toJSON() {
     return {
       id: this.id,
       name: this.name,
-      link: this.link ? this.link.toJSON() : null,
-      share: this.share ? this.share.toJSON() : null,
-      picture: this.picture ? this.picture.toJSON() : null,
-      picture_small: this.picture_small ? this.picture_small.toJSON() : null,
-      picture_medium: this.picture_medium ? this.picture_medium.toJSON() : null,
-      picture_big: this.picture_big ? this.picture_big.toJSON() : null,
-      picture_xl: this.picture_xl ? this.picture_xl.toJSON() : null,
+      link: this.link,
+      share: this.share,
+      picture: this.picture,
+      picture_small: this.picture_small,
+      picture_medium: this.picture_medium,
+      picture_big: this.picture_big,
+      picture_xl: this.picture_xl,
       nb_album: this.nb_album,
       nb_fan: this.nb_fan,
       radio: this.radio,
-      tracklist: this.tracklist ? this.tracklist.toJSON() : null,
+      tracklist: this.tracklist,
     }
   }
 
   static URL() {
-    return new url.URL('https://api.deezer.com/artist/')
+    return 'https://api.deezer.com/artist/'
   }
 
   static generateURL(id) {
-    return `${Artist.URL().toString()}/${id}`
+    return `${Artist.URL()}/${id}`
   }
+
 }
 
 module.exports = Artist

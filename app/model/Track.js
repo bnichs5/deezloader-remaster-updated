@@ -1,4 +1,3 @@
-const url = require('url')
 const dateformat = require('dateformat')
 const Artist = require('./Artist')
 const Album = require('./Album')
@@ -41,22 +40,22 @@ class Track {
     this.title_version = opt.title_version
     this.unseen = opt.unseen
     this.isrc = opt.isrc
-    this.link = opt.link ? new url.URL(opt.link) : null
-    this.share = opt.share ? new url.URL(opt.share) : null
+    this.link = opt.link
+    this.share = opt.share
     this.duration = opt.duration
     this.track_position = opt.track_position
     this.disk_number = opt.disk_number
     this.rank = opt.rank
-    this.release_date = opt.release_date ? new Date(opt.release_date) : null
+    this.release_date = opt.release_date ? new Date(opt.release_date) : undefined
     this.explicit_lyrics = opt.explicit_lyrics
-    this.preview = opt.preview ? new url.URL(opt.preview) : null
+    this.preview = opt.preview
     this.bpm = opt.bpm
     this.gain = opt.gain
     this.available_countries = opt.available_countries || []
-    this.alternative = opt.alternative ? new Track(opt.alternative) : null
+    this.alternative = opt.alternative ? new Track(opt.alternative) : undefined
     this.contributors = opt.contributors ? opt.contributors.map(c => new Artist(c)) : []
-    this.artist = opt.artist ? new Artist(opt.artist) : null
-    this.album = opt.album ? new Album(opt.album) : null
+    this.artist = opt.artist ? new Artist(opt.artist) : undefined
+    this.album = opt.album ? new Album(opt.album) : undefined
   }
 
   toJSON() {
@@ -68,32 +67,33 @@ class Track {
       title_version: this.title_version,
       unseen: this.unseen,
       isrc: this.isrc,
-      link: this.link ? this.link.toJSON() : null,
-      share: this.share ? this.share.toJSON() : null,
+      link: this.link,
+      share: this.share,
       duration: this.duration,
       track_position: this.track_position,
       disk_number: this.disk_number,
       rank: this.rank,
-      release_date: this.release_date ? dateformat(this.release_date, 'yyyy-mm-dd') : null,
+      release_date: this.release_date ? dateformat(this.release_date, 'yyyy-mm-dd') : undefined,
       explicit_lyrics: this.explicit_lyrics,
-      preview: this.preview ? this.preview.toJSON() : null,
+      preview: this.preview,
       bpm: this.bpm,
       gain: this.gain,
       available_countries: this.available_countries,
-      alternative: this.alternative ? this.alternative.toJSON() : null,
+      alternative: this.alternative ? this.alternative.toJSON() : undefined,
       contributors: this.contributors.map(c => c.toJSON()),
-      artist: this.artist ? this.artist.toJSON() : null,
-      album: this.album ? this.album.toJSON() : null,
+      artist: this.artist ? this.artist.toJSON() : undefined,
+      album: this.album ? this.album.toJSON() : undefined,
     }
   }
 
   static URL() {
-    return new url.URL('https://api.deezer.com/track/')
+    return 'https://api.deezer.com/track/'
   }
 
   static generateURL(id) {
-    return `${Track.URL().toString()}/${id}`
+    return `${Track.URL()}/${id}`
   }
+
 }
 
 module.exports = Track

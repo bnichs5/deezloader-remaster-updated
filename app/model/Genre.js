@@ -1,5 +1,3 @@
-const url = require('url')
-
 class Genre {
 
   /**
@@ -17,32 +15,33 @@ class Genre {
     const opt = options || {}
     this.id = opt.id
     this.name = opt.name
-    this.picture = opt.picture ? new url.URL(opt.picture) : null
-    this.picture_small = opt.picture_small ? new url.URL(opt.picture_small) : null
-    this.picture_medium = opt.picture_medium ? new url.URL(opt.picture_medium) : null
-    this.picture_big = opt.picture_big ? new url.URL(opt.picture_big) : null
-    this.picture_xl = opt.picture_xl ? new url.URL(opt.picture_xl) : null
+    this.picture = opt.picture
+    this.picture_small = opt.picture_small
+    this.picture_medium = opt.picture_medium
+    this.picture_big = opt.picture_big
+    this.picture_xl = opt.picture_xl
   }
 
   toJSON() {
     return {
       id: this.id,
       name: this.name,
-      picture: this.picture ? this.picture.toJSON() : null,
-      picture_small: this.picture_small ? this.picture_small.toJSON() : null,
-      picture_medium: this.picture_medium ? this.picture_medium.toJSON() : null,
-      picture_big: this.picture_big ? this.picture_big.toJSON() : null,
-      picture_xl: this.picture_xl ? this.picture_xl.toJSON() : null,
+      picture: this.picture,
+      picture_small: this.picture_small,
+      picture_medium: this.picture_medium,
+      picture_big: this.picture_big,
+      picture_xl: this.picture_xl,
     }
   }
 
   static URL() {
-    return new url.URL('https://api.deezer.com/genre/')
+    return 'https://api.deezer.com/genre/'
   }
 
   static generateURL(id) {
-    return `${Genre.URL().toString()}/${id}`
+    return `${Genre.URL()}/${id}`
   }
+
 }
 
 module.exports = Genre

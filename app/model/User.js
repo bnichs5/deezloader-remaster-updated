@@ -1,4 +1,4 @@
-const url = require('url')
+const dateformat = require('dateformat')
 
 class User {
 
@@ -34,19 +34,19 @@ class User {
     this.firstname = opt.firstname
     this.email = opt.email
     this.status = opt.status
-    this.birthday = opt.birthday ? new Date(opt.birthday) : null
-    this.inscription_date = opt.inscription_date ? new Date(opt.inscription_date) : null
+    this.birthday = opt.birthday ? new Date(opt.birthday) : undefined
+    this.inscription_date = opt.inscription_date ? new Date(opt.inscription_date) : undefined
     this.gender = opt.gender
-    this.link = opt.link ? new url.URL(opt.link) : null
-    this.picture = opt.picture ? new url.URL(opt.picture) : null
-    this.picture_small = opt.picture_small ? new url.URL(opt.picture_small) : null
-    this.picture_medium = opt.picture_medium ? new url.URL(opt.picture_medium) : null
-    this.picture_big = opt.picture_big ? new url.URL(opt.picture_big) : null
-    this.picture_xl = opt.picture_xl ? new url.URL(opt.picture_xl) : null
+    this.link = opt.link
+    this.picture = opt.picture
+    this.picture_small = opt.picture_small
+    this.picture_medium = opt.picture_medium
+    this.picture_big = opt.picture_big
+    this.picture_xl = opt.picture_xl
     this.country = opt.country
     this.lang = opt.lang
     this.is_kid = opt.is_kid
-    this.tracklist = opt.tracklist ? new url.URL(opt.tracklist) : null
+    this.tracklist = opt.tracklist
   }
 
   toJSON() {
@@ -57,29 +57,31 @@ class User {
       firstname: this.firstname,
       email: this.email,
       status: this.status,
-      birthday: this.birthday,
-      inscription_date: this.inscription_date,
+      birthday: this.birthday ? dateformat(this.birthday, 'yyyy-mm-dd') : undefined,
+      inscription_date: this.inscription_date ?
+        dateformat(this.inscription_date, 'yyyy-mm-dd') : undefined,
       gender: this.gender,
-      link: this.link ? this.link.toJSON() : null,
-      picture: this.picture ? this.picture.toJSON() : null,
-      picture_small: this.picture_small ? this.picture_small.toJSON() : null,
-      picture_medium: this.picture_medium ? this.picture_medium.toJSON() : null,
-      picture_big: this.picture_big ? this.picture_big.toJSON() : null,
-      picture_xl: this.picture_xl ? this.picture_xl.toJSON() : null,
+      link: this.link,
+      picture: this.picture,
+      picture_small: this.picture_small,
+      picture_medium: this.picture_medium,
+      picture_big: this.picture_big,
+      picture_xl: this.picture_xl,
       country: this.country,
       lang: this.lang,
       is_kid: this.is_kid,
-      tracklist: this.tracklist ? this.tracklist.toJSON() : null,
+      tracklist: this.tracklist,
     }
   }
 
   static URL() {
-    return new url.URL('https://api.deezer.com/user/')
+    return 'https://api.deezer.com/user/'
   }
 
   static generateURL(id) {
-    return `${User.URL().toString()}/${id}`
+    return `${User.URL()}/${id}`
   }
+
 }
 
 module.exports = User
