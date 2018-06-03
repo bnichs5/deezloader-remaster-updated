@@ -23,38 +23,43 @@ class Artist {
     const opt = options || {}
     this.id = opt.id
     this.name = opt.name
-    this.link = new url.URL(opt.link)
-    this.share = new url.URL(opt.share)
-    this.picture = new url.URL(opt.picture)
-    this.picture_small = new url.URL(opt.picture_small)
-    this.picture_medium = new url.URL(opt.picture_medium)
-    this.picture_big = new url.URL(opt.picture_big)
-    this.picture_xl = new url.URL(opt.picture_xl)
+    this.link = opt.link ? new url.URL(opt.link) : null
+    this.share = opt.share ? new url.URL(opt.share) : null
+    this.picture = opt.picture ? new url.URL(opt.picture) : null
+    this.picture_small = opt.picture_small ? new url.URL(opt.picture_small) : null
+    this.picture_medium = opt.picture_medium ? new url.URL(opt.picture_medium) : null
+    this.picture_big = opt.picture_big ? new url.URL(opt.picture_big) : null
+    this.picture_xl = opt.picture_xl ? new url.URL(opt.picture_xl) : null
     this.nb_album = opt.nb_album
     this.nb_fan = opt.nb_fan
     this.radio = opt.radio
-    this.tracklist = new url.URL(opt.tracklist)
+    this.tracklist = opt.tracklist ? new url.URL(opt.tracklist) : null
   }
 
-  /**
-   * @return {string}
-   */
   toJSON() {
-    return JSON.stringify({
+    return {
       id: this.id,
       name: this.name,
-      link: this.link.toJSON(),
-      share: this.share.toJSON(),
-      picture: this.picture.toJSON(),
-      picture_small: this.picture_small.toJSON(),
-      picture_medium: this.picture_medium.toJSON(),
-      picture_big: this.picture_big.toJSON(),
-      picture_xl: this.picture_xl.toJSON(),
+      link: this.link ? this.link.toJSON() : null,
+      share: this.share ? this.share.toJSON() : null,
+      picture: this.picture ? this.picture.toJSON() : null,
+      picture_small: this.picture_small ? this.picture_small.toJSON() : null,
+      picture_medium: this.picture_medium ? this.picture_medium.toJSON() : null,
+      picture_big: this.picture_big ? this.picture_big.toJSON() : null,
+      picture_xl: this.picture_xl ? this.picture_xl.toJSON() : null,
       nb_album: this.nb_album,
       nb_fan: this.nb_fan,
       radio: this.radio,
-      tracklist: this.tracklist.toJSON(),
-    })
+      tracklist: this.tracklist ? this.tracklist.toJSON() : null,
+    }
+  }
+
+  static URL() {
+    return new url.URL('https://api.deezer.com/artist/')
+  }
+
+  static generateURL(id) {
+    return `${Artist.URL().toString()}/${id}`
   }
 }
 

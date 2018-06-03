@@ -17,23 +17,31 @@ class Genre {
     const opt = options || {}
     this.id = opt.id
     this.name = opt.name
-    this.picture = new url.URL(opt.picture)
-    this.picture_small = new url.URL(opt.picture_small)
-    this.picture_medium = new url.URL(opt.picture_medium)
-    this.picture_big = new url.URL(opt.picture_big)
-    this.picture_xl = new url.URL(opt.picture_xl)
+    this.picture = opt.picture ? new url.URL(opt.picture) : null
+    this.picture_small = opt.picture_small ? new url.URL(opt.picture_small) : null
+    this.picture_medium = opt.picture_medium ? new url.URL(opt.picture_medium) : null
+    this.picture_big = opt.picture_big ? new url.URL(opt.picture_big) : null
+    this.picture_xl = opt.picture_xl ? new url.URL(opt.picture_xl) : null
   }
 
   toJSON() {
     return {
       id: this.id,
       name: this.name,
-      picture: this.picture.toJSON(),
-      picture_small: this.picture_small.toJSON(),
-      picture_medium: this.picture_medium.toJSON(),
-      picture_big: this.picture_big.toJSON(),
-      picture_xl: this.picture_xl.toJSON(),
+      picture: this.picture ? this.picture.toJSON() : null,
+      picture_small: this.picture_small ? this.picture_small.toJSON() : null,
+      picture_medium: this.picture_medium ? this.picture_medium.toJSON() : null,
+      picture_big: this.picture_big ? this.picture_big.toJSON() : null,
+      picture_xl: this.picture_xl ? this.picture_xl.toJSON() : null,
     }
+  }
+
+  static URL() {
+    return new url.URL('https://api.deezer.com/genre/')
+  }
+
+  static generateURL(id) {
+    return `${Genre.URL().toString()}/${id}`
   }
 }
 

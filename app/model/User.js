@@ -34,19 +34,19 @@ class User {
     this.firstname = opt.firstname
     this.email = opt.email
     this.status = opt.status
-    this.birthday = new Date(opt.birthday)
-    this.inscription_date = new Date(opt.inscription_date)
+    this.birthday = opt.birthday ? new Date(opt.birthday) : null
+    this.inscription_date = opt.inscription_date ? new Date(opt.inscription_date) : null
     this.gender = opt.gender
-    this.link = new url.URL(opt.link)
-    this.picture = new url.URL(opt.picture)
-    this.picture_small = new url.URL(opt.picture_small)
-    this.picture_medium = new url.URL(opt.picture_medium)
-    this.picture_big = new url.URL(opt.picture_big)
-    this.picture_xl = new url.URL(opt.picture_xl)
+    this.link = opt.link ? new url.URL(opt.link) : null
+    this.picture = opt.picture ? new url.URL(opt.picture) : null
+    this.picture_small = opt.picture_small ? new url.URL(opt.picture_small) : null
+    this.picture_medium = opt.picture_medium ? new url.URL(opt.picture_medium) : null
+    this.picture_big = opt.picture_big ? new url.URL(opt.picture_big) : null
+    this.picture_xl = opt.picture_xl ? new url.URL(opt.picture_xl) : null
     this.country = opt.country
     this.lang = opt.lang
     this.is_kid = opt.is_kid
-    this.tracklist = new url.URL(opt.tracklist)
+    this.tracklist = opt.tracklist ? new url.URL(opt.tracklist) : null
   }
 
   toJSON() {
@@ -60,17 +60,25 @@ class User {
       birthday: this.birthday,
       inscription_date: this.inscription_date,
       gender: this.gender,
-      link: this.link.toJSON(),
-      picture: this.picture.toJSON(),
-      picture_small: this.picture_small.toJSON(),
-      picture_medium: this.picture_medium.toJSON(),
-      picture_big: this.picture_big.toJSON(),
-      picture_xl: this.picture_xl.toJSON(),
+      link: this.link ? this.link.toJSON() : null,
+      picture: this.picture ? this.picture.toJSON() : null,
+      picture_small: this.picture_small ? this.picture_small.toJSON() : null,
+      picture_medium: this.picture_medium ? this.picture_medium.toJSON() : null,
+      picture_big: this.picture_big ? this.picture_big.toJSON() : null,
+      picture_xl: this.picture_xl ? this.picture_xl.toJSON() : null,
       country: this.country,
       lang: this.lang,
       is_kid: this.is_kid,
-      tracklist: this.tracklist.toJSON(),
+      tracklist: this.tracklist ? this.tracklist.toJSON() : null,
     }
+  }
+
+  static URL() {
+    return new url.URL('https://api.deezer.com/user/')
+  }
+
+  static generateURL(id) {
+    return `${User.URL().toString()}/${id}`
   }
 }
 

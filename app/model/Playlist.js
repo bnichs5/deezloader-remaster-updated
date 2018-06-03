@@ -42,15 +42,15 @@ class Playlist {
     this.nb_tracks = opt.nb_tracks
     this.unseen_track_count = opt.unseen_track_count
     this.fans = opt.fans
-    this.link = new url.URL(opt.link)
-    this.share = new url.URL(opt.share)
-    this.picture = new url.URL(opt.picture)
-    this.picture_small = new url.URL(opt.picture_small)
-    this.picture_medium = new url.URL(opt.picture_medium)
-    this.picture_big = new url.URL(opt.picture_big)
-    this.picture_xl = new url.URL(opt.picture_xl)
+    this.link = opt.link ? new url.URL(opt.link) : null
+    this.share = opt.link ? new url.URL(opt.share) : null
+    this.picture = opt.link ? new url.URL(opt.picture) : null
+    this.picture_small = opt.picture_small ? new url.URL(opt.picture_small) : null
+    this.picture_medium = opt.picture_medium ? new url.URL(opt.picture_medium) : null
+    this.picture_big = opt.picture_big ? new url.URL(opt.picture_big) : null
+    this.picture_xl = opt.picture_xl ? new url.URL(opt.picture_xl) : null
     this.checksum = opt.checksum
-    this.creator = new User(opt.creator)
+    this.creator = opt.creator ? new User(opt.creator) : null
     this.tracks = opt.tracks ? opt.tracks.map(t => new Track(t)) : []
   }
 
@@ -67,17 +67,25 @@ class Playlist {
       nb_tracks: this.nb_tracks,
       unseen_track_count: this.unseen_track_count,
       fans: this.fans,
-      link: this.link.toJSON(),
-      share: this.share.toJSON(),
-      picture: this.picture.toJSON(),
-      picture_small: this.picture_small.toJSON(),
-      picture_medium: this.picture_medium.toJSON(),
-      picture_big: this.picture_big.toJSON(),
-      picture_xl: this.picture_xl.toJSON(),
+      link: this.link ? this.link.toJSON() : null,
+      share: this.share ? this.share.toJSON() : null,
+      picture: this.picture ? this.picture.toJSON() : null,
+      picture_small: this.picture_small ? this.picture_small.toJSON() : null,
+      picture_medium: this.picture_medium ? this.picture_medium.toJSON() : null,
+      picture_big: this.picture_big ? this.picture_big.toJSON() : null,
+      picture_xl: this.picture_xl ? this.picture_xl.toJSON() : null,
       checksum: this.checksum,
-      creator: this.creator,
+      creator: this.creator ? this.creator.toJSON() : null,
       tracks: this.tracks.map(t => t.toJSON())
     }
+  }
+
+  static URL() {
+    return new url.URL('https://api.deezer.com/playlist/')
+  }
+
+  static generateURL(id) {
+    return `${Playlist.URL().toString()}/${id}`
   }
 }
 
