@@ -83,7 +83,7 @@ class BaseTrack {
   }
 
   static URL() {
-    return 'https://api.deezer.com/track/'
+    return 'https://api.deezer.com/track'
   }
 
   static generateURL(id) {

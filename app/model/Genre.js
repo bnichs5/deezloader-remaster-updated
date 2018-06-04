@@ -35,7 +35,7 @@ class Genre {
   }
 
   static URL() {
-    return 'https://api.deezer.com/genre/'
+    return 'https://api.deezer.com/genre'
   }
 
   static generateURL(id) {

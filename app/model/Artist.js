@@ -53,7 +53,7 @@ class Artist {
   }
 
   static URL() {
-    return 'https://api.deezer.com/artist/'
+    return 'https://api.deezer.com/artist'
   }
 
   static generateURL(id) {

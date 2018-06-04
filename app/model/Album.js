@@ -99,7 +99,7 @@ class Album {
   }
 
   static URL() {
-    return 'https://api.deezer.com/album/'
+    return 'https://api.deezer.com/album'
   }
 
   static generateURL(id) {

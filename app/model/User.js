@@ -75,7 +75,7 @@ class User {
   }
 
   static URL() {
-    return 'https://api.deezer.com/user/'
+    return 'https://api.deezer.com/user'
   }
 
   static generateURL(id) {

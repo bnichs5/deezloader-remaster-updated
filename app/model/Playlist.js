@@ -84,7 +84,7 @@ class Playlist {
   }
 
   static URL() {
-    return 'https://api.deezer.com/playlist/'
+    return 'https://api.deezer.com/playlist'
   }
 
   static generateURL(id) {
