@@ -24,12 +24,18 @@ const execute = async () => {
   const asyncFunc = queueWaiting.shift()
   queueExecuting.push(asyncFunc)
   executing++
-  asyncFunc()
-    .then(() => finishExecution(asyncFunc))
-    .catch(() => finishExecution(asyncFunc))
+  asyncFunc.asyncFunc()
+    .then(result => {
+      asyncFunc.resolve(result)
+      finishExecution()
+    })
+    .catch(error => {
+      asyncFunc.reject(error)
+      finishExecution()
+    })
 }
 
-const finishExecution = (asyncFunc) => {
+const finishExecution = () => {
   queueExecuting.shift()
   setTimeout(() => {
     console.log('Position liberated')
@@ -43,12 +49,14 @@ const finishExecution = (asyncFunc) => {
 
 /**
  *
- * @param {function[]} asyncFunc
+ * @param {function} asyncFunc
  * @return {Promise}
  */
-const add = async (...asyncFunc) => {
+const add = async (asyncFunc) => {
   if (!timer) timer = startTimer()
-  queueWaiting.push(...asyncFunc)
+  return new Promise((resolve, reject) => {
+    queueWaiting.push({ asyncFunc, resolve, reject })
+  })
 }
 
 /**
