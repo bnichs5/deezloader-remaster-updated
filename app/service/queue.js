@@ -61,7 +61,7 @@ const configure = (options) => {
   options = options || {}
   if (options.maxItems) maxItems = options.maxItems
   if (options.ms) ms = options.ms
-  return deezerQueue
+  return queue
 }
 
 const queue = { add, configure }
