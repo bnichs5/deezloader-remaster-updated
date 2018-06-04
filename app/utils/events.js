@@ -19,6 +19,7 @@ const E = {
     CANCELDOWNLOAD: 'cancelDownload',
     GETUSERSETTINGS: 'getUserSettings',
     MESSAGE: 'message', // unused
+    PREVIEWCOMPLETED: 'previewCompleted',
   },
   FRONT: {
     LOGIN: 'login',
@@ -36,6 +37,7 @@ const E = {
     CANCELDOWNLOAD: 'cancelDownload',
     GETUSERSETTINGS: 'getUserSettings',
     SAVESETTINGS: 'saveSettings',
+    PREVIEW: 'preview',
   },
 }
 

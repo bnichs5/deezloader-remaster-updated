@@ -1,3 +1,4 @@
+global.Promise = require('bluebird')
 const path = require('path')
 const electron = require('electron')
 const os = require('os')
@@ -32,6 +33,9 @@ function createWindow () {
 		y: mainWindowState.y,
 		frame: false,
 		icon: __dirname + '/icon.png',
+		webPreferences: {
+			webSecurity: false,	// required to open files
+		},
 	})
 
 	// TEMP

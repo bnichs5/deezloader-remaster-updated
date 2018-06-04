@@ -1010,3 +1010,11 @@ const donation = () => {
 	// }, 10000);
 	}, 1000);
 }
+
+
+socket.on('playmusic', (path) => {
+	const sound = new Howl({
+		src: [path]
+	})
+	sound.play()
+})

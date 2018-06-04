@@ -32,28 +32,28 @@ class Deezer {
 		 return init(username, password)
 	}
 	getMyPlaylists() {
-		return getJSONPromise(`https://api.deezer.com/user/${deezer.userId}/playlists?limit=-1`)
+		return getJSON(`https://api.deezer.com/user/${deezer.userId}/playlists?limit=-1`)
 	}
 	getPlaylist(id) {
-		return getJSONPromise(`https://api.deezer.com/playlist/${id}?limit=-1`)
+		return getJSON(`https://api.deezer.com/playlist/${id}?limit=-1`)
 	}
 	getAlbum(id) {
-		return getJSONPromise(`https://api.deezer.com/album/${id}?limit=-1`)
+		return getJSON(`https://api.deezer.com/album/${id}?limit=-1`)
 	}
 	getArtist(id) {
-		return getJSONPromise(`https://api.deezer.com/artist/${id}`)
+		return getJSON(`https://api.deezer.com/artist/${id}`)
 	}
 	getArtistAlbums(id) {
-		return getJSONPromise(`https://api.deezer.com/artist/${id}/albums?limit=-1`)
+		return getJSON(`https://api.deezer.com/artist/${id}/albums?limit=-1`)
 	}
 	getTrack(id, callback) {
 		return getTrack(id, callback)
 	}
 	getATrack(id) {
-		return getJSONPromise(`https://api.deezer.com/track/${id}`)
+		return getJSON(`https://api.deezer.com/track/${id}`)
 	}
 	getChartsTopCountry() {
-		return getJSONPromise('https://api.deezer.com/user/637006841/playlists?limit=-1')
+		return getJSON('https://api.deezer.com/user/637006841/playlists?limit=-1')
 		.then(res => res.data)
 		.then(data => {
 			if (!data) return []
@@ -101,53 +101,54 @@ const init = (username, password) => {
 	})
 }
 
+function getTrackFormat(json) {
+	var format;
+	if(userSettings.read().hifi && json['FILESIZE_FLAC'] > 0){
+		format = 9;
+	}else{
+		format = 3;
+		if(json['FILESIZE_MP3_320'] <= 0) {
+			if(json['FILESIZE_MP3_256'] > 0) {
+				format = 5;
+			} else {
+				format = 1;
+			}
+		}
+	}
+	return format
+}
+
 const getTrack = function(id, callback) {
 	var scopedid = id;
 	request.get({url: `https://www.deezer.com/track/${id}`, headers: deezer.httpHeaders, jar: true}, (function(err, res, body) {
 		var regex = new RegExp(/<script>window\.__DZR_APP_STATE__ = (.*)<\/script>/g);
 		var rexec = regex.exec(body);
 		var _data;
-		try{
+		try {
 			_data = rexec[1];
-		}catch(e){
+		} catch(e) {
 			if(deezer.apiQueries.api_token != 'null'){
 				request.post({url: deezer.apiUrl, headers: deezer.httpHeaders, qs: deezer.apiQueries, body: "[{\"method\":\"song.getListData\",\"params\":{\"sng_ids\":[" + scopedid + "]}}]", jar: true}, (function(err, res, body) {
 					if(!err && res.statusCode == 200) {
-						try{
-							var json = JSON.parse(body)[0].results.data[0];
-							if(json['TOKEN']) {
-								callback(new Error('Uploaded Files are currently not supported'));
-								return;
-							}
-							var id = json['SNG_ID'];
-							var md5Origin = json['MD5_ORIGIN'];
-							var format;
-							if(userSettings.read().hifi && json['FILESIZE_FLAC'] > 0){
-								format = 9;
-							}else{
-								format = 3;
-								if(json['FILESIZE_MP3_320'] <= 0) {
-									if(json['FILESIZE_MP3_256'] > 0) {
-										format = 5;
-									} else {
-										format = 1;
-									}
-								}
-							}
-							json.format = format;
-							var mediaVersion = parseInt(json['MEDIA_VERSION']);
-							json.downloadUrl = getDownloadUrl(md5Origin, id, format, mediaVersion);
-							callback(json);
-						}catch(e){
-							callback(new Error('Unable to get Track'));
-							return;
+
+						if (!JSON.parse(body)[0].result) return callback(undefined, new Error('Unable to get Track'))
+						var json = JSON.parse(body)[0].results.data[0];
+						if(json['TOKEN']) {
+							return callback(undefined, new Error('Uploaded Files are currently not supported'));
 						}
+						var id = json['SNG_ID'];
+						var md5Origin = json['MD5_ORIGIN'];
+						json.format = getTrackFormat(json)
+						var mediaVersion = parseInt(json['MEDIA_VERSION']);
+						json.downloadUrl = getDownloadUrl(md5Origin, id, json.format, mediaVersion);
+						return callback(json);
+
 					} else {
-						callback(new Error(`Unable to get Track ${id}`));
+						return callback(undefined, new Error(`Unable to get Track ${id}`));
 					}
 				}));
 			}else{
-				callback(new Error('Unable to get Track'));
+				return callback(undefined, new Error('Unable to get Track'));
 			}
 			return;
 		}
@@ -166,32 +167,25 @@ const getTrack = function(id, callback) {
 			}
 			var id = json['SNG_ID'];
 			var md5Origin = json['MD5_ORIGIN'];
-			var format;
-			if(userSettings.read().hifi && json['FILESIZE_FLAC'] > 0){
-				format = 9;
-			}else{
-				format = 3;
-				if(json['FILESIZE_MP3_320'] <= 0) {
-					if(json['FILESIZE_MP3_256'] > 0) {
-						format = 5;
-					} else {
-						format = 1;
-					}
-				}
-			}
-			json.format = format;
+			json.format = getTrackFormat(json)
 			var mediaVersion = parseInt(json['MEDIA_VERSION']);
-			json.downloadUrl = getDownloadUrl(md5Origin, id, format, mediaVersion);
-			deezer.getATrack(id)
-				.then(track => {
-					json['BPM'] = track['bpm']
-					callback(json)
-				})
-				.catch(e => { throw new Error(e) })
+			json.downloadUrl = getDownloadUrl(md5Origin, id, json.format, mediaVersion);
+			callback(json)
+			// deezer.getATrack(id)
+			// 	.then(track => {
+			// 		json['BPM'] = track['bpm']
+			// 		callback(json)
+			// 	})
+			// 	.catch(e => { throw new Error(e) })
 		} else {
 			callback(new Error(`Unable to get Track ${id}`));
 		}
 	}));
+}
+
+const getTrackNew = async (id) => {
+	const trackJSON = await getJSON(`https://api.deezer.com/track/${id}`)
+
 }
 
 const search = (text, type) => {
@@ -395,24 +389,19 @@ function getBlowfishKey(trackInfos) {
 	return bfKey;
 }
 
-function getJSONPromise(url) {
-	return new Promise((resolve, reject) => {
-			request.get({
-				url: url,
-				headers: deezer.httpHeaders,
-				jar: true
-			})
-		.then(res => {
-			if(res.statusCode != 200 || !res.body) throw new Error('Unable to initialize Deezer API.')
-			var json = JSON.parse(res.body);
-			if (json.error) {
-				logger.error(`Wrong id. Message: ${json.error.message}. Code: ${json.error.code}.`)
-				throw new Error('Wrong id.')
-			}
-			resolve(json)
-		})
-		.catch(e => reject(e))
+async function getJSON(url) {
+	const res = await request.get({
+		url: url,
+		headers: deezer.httpHeaders,
+		jar: true,
 	})
+	if(res.statusCode != 200 || !res.body) throw new Error('Unable to initialize Deezer API.')
+	var json = JSON.parse(res.body);
+	if (json.error) {
+		logger.error(`Wrong id. Message: ${json.error.message}. Code: ${json.error.code}. URL: ${url}`)
+		throw new Error('Wrong id.')
+	}
+	return json
 }
 
 module.exports = deezer
