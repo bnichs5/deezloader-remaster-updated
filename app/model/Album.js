@@ -1,7 +1,7 @@
 const dateformat = require('dateformat')
 const Genre = require('./Genre')
 const Artist = require('./Artist')
-const Track = require('./Track')
+const AlbumTrack = require('./AlbumTrack')
 
 class Album {
 
@@ -64,8 +64,8 @@ class Album {
     this.artist = opt.artist ? new Artist(opt.artist) : undefined
     if (!opt.tracks) opt.tracks = {}
     if (!opt.tracks.data) opt.tracks.data = []
-    /** @type {Track[]} */
-    this.tracks = opt.tracks ? opt.tracks.data.map(t => new Track(t)) : []
+    /** @type {AlbumTrack[]} */
+    this.tracks = opt.tracks ? opt.tracks.data.map(t => new AlbumTrack(t)) : []
   }
 
   toJSON() {
